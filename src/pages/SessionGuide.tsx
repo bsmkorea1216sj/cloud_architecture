@@ -499,12 +499,7 @@ export const SessionGuide: React.FC = () => {
                           </SpaceBetween>
                         </Box>
                       ),
-                      colabContent && (
-          <Container key="colab-card" id="colab">
-            <MarkdownRenderer content={colabContent} />
-          </Container>
-        ),
-      ].filter(Boolean)}
+                      ].filter(Boolean)}
                   </ColumnLayout>
                 </Box>
               )}
@@ -780,7 +775,12 @@ export const SessionGuide: React.FC = () => {
             </SpaceBetween>
           </Container>
         ),
-      ].filter(Boolean)}
+              colabContent && (
+          <Container key="colab-card" id="colab">
+            <MarkdownRenderer content={colabContent} />
+          </Container>
+        ),
+].filter(Boolean)}
     </SpaceBetween>
   );
 };
