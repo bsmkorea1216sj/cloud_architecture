@@ -15,7 +15,7 @@ learningObjectives:
 
 # (26) Amazon API Gateway — AWS 콘솔 기반 사용자 관리 서비스
 
-**2026-10-29 개정.** 코랩에서 구성한 서비스를 AWS Management Console에서 직접 설정합니다. 설치 스크립트나 코랩 실행 없이 완료할 수 있습니다. 화면의 버튼 이름은 콘솔 언어와 업데이트에 따라 다를 수 있습니다.
+**2026-10-29 개정.** 코랩에서 구성한 서비스를 AWS Management Console에서 직접 설정합니다. 설치 스크립트나 코랩 실행 없이 완료할 수 있습니다. **Lambda 코드와 index.html 전체 소스를 아래 본문에 포함했습니다. 다운로드하지 않아도 코드 블록을 복사하여 진행할 수 있습니다.** 화면의 버튼 이름은 콘솔 언어와 업데이트에 따라 다를 수 있습니다.
 
 > [!TIP]
 > 구조: **HTML 웹 화면 → API Gateway REST API → Lambda → DynamoDB**.
@@ -31,8 +31,9 @@ learningObjectives:
 5. 실습에서 새로 만든 리소스의 이름과 API ID, 버킷 이름을 기록합니다. 유료 사용량이 발생할 수 있으므로 종료 후 정리합니다.
 
 > [!DOWNLOAD]
-> - [Lambda 코드: lambda_function.py](/files/week9/console-26/lambda_function.py) — 다운로드 후 텍스트 편집기로 열어 Lambda 코드 편집기에 복사합니다.
-> - [웹 화면: index.html](/files/week9/console-26/index.html) — 다운로드 후 S3에 업로드합니다. 화면에서 본인 API URL을 입력합니다.
+> - 파일 링크는 보조 수단입니다. 아래 **1.2의 Lambda 전체 코드**, **5.1의 index.html 전체 코드**를 복사해 사용하세요.
+> - [Lambda 코드: lambda_function.py](https://bsmkorea1216sj.github.io/cloud_architecture/files/week9/console-26/lambda_function.py) — 아래 본문에도 전체 코드를 제공합니다.
+> - [웹 화면: index.html](https://bsmkorea1216sj.github.io/cloud_architecture/files/week9/console-26/index.html) — 아래 본문 코드를 index.html로 저장한 뒤 S3에 업로드할 수 있습니다.
 > - [개정 전 원본 문서](https://github.com/bsmkorea1216sj/cloud_architecture/blob/main/backups/2026-10-29/week9/9-3-api-gateway.before-26.md)
 
 | 리소스 | 이름 또는 설정 |
@@ -99,7 +100,7 @@ learningObjectives:
 1. **Lambda → Functions → Create function → Author from scratch**를 선택합니다.
 2. Function name: `CloudArchitect-Lab-UsersAPI`, Runtime: **Python 3.12**.
 3. **Change default execution role → Use an existing role**에서 위 역할을 선택하고 생성합니다. 역할이 목록에 없으면 전파를 기다린 뒤 새로고침합니다.
-4. **Code → lambda_function.py**의 전체 내용을 다운로드한 [Lambda 코드](/files/week9/console-26/lambda_function.py)로 교체하고 **Deploy**합니다. 파일을 ZIP으로 만들 필요는 없습니다.
+4. **Code → lambda_function.py**의 전체 내용을 아래 **Lambda 전체 코드**로 교체하고 **Deploy**합니다. 파일을 ZIP으로 만들 필요는 없습니다.
 5. **Configuration → Environment variables → Edit**에서 다음 두 값을 저장합니다.
 
 | 키 | 값 |
@@ -109,6 +110,112 @@ learningObjectives:
 
 6. **Configuration → General configuration → Edit**에서 Timeout **30초**, Memory **128MB**를 설정합니다.
 7. Runtime settings의 Handler가 `lambda_function.lambda_handler`인지 확인합니다. **Configuration → Permissions**에서 실행 역할도 확인합니다.
+
+#### Lambda 전체 코드 — lambda_function.py
+
+아래 코드 블록 전체를 복사해 Lambda 편집기의 `lambda_function.py`에 붙여넣고 **Deploy**합니다. 위의 환경 변수 두 개도 설정해야 합니다.
+
+```python
+"""Week 9-3: REST API proxy (payload v1.0), small-table lab."""
+import json
+import os
+import logging
+from decimal import Decimal
+import boto3
+
+logger = logging.getLogger(__name__)
+table = boto3.resource('dynamodb').Table(os.environ['TABLE_NAME'])
+
+def decimal_default(value):
+    if isinstance(value, Decimal):
+        return int(value) if value == value.to_integral_value() else float(value)
+    raise TypeError('Unsupported JSON type')
+
+def reply(status, body, headers=None):
+    return {
+        'statusCode': status,
+        'headers': {'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': os.environ.get('ALLOWED_ORIGIN', '*'),
+                    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+                    **(headers or {})},
+        'body': json.dumps(body, default=decimal_default, ensure_ascii=False),
+    }
+
+def reject_constant(value):
+    raise ValueError('Non-finite JSON number')
+
+def lambda_handler(event, context):
+    try:
+        # REST API proxy v1.0. HTTP API v2.0 needs a separate event adapter.
+        if not isinstance(event, dict):
+            return reply(400, {'error': '이벤트는 객체여야 합니다'})
+        method, path = event.get('httpMethod'), event.get('path')
+        if not isinstance(method, str) or not isinstance(path, str):
+            return reply(400, {'error': 'REST API v1.0의 httpMethod와 path가 필요합니다'})
+
+        if path == '/users' and method == 'GET':
+            # One Scan reads at most 1 MB. Aggregate pages for this small lab.
+            users, options = [], {'ConsistentRead': True}
+            while True:
+                page = table.scan(**options)
+                users.extend(page.get('Items', []))
+                last_key = page.get('LastEvaluatedKey')
+                if not last_key:
+                    break
+                options['ExclusiveStartKey'] = last_key
+            return reply(200, {
+                'message': 'CloudArchitect Week 9-3 - Lambda와 DynamoDB 연동',
+                'users': users, 'count': len(users),
+            })
+
+        if path.startswith('/users/') and method == 'GET':
+            user_id = (event.get('pathParameters') or {}).get('id')
+            if not isinstance(user_id, str) or not user_id.strip():
+                return reply(400, {'error': '문자열 id가 필요합니다'})
+            profile = (event.get('queryStringParameters') or {}).get('profileType', 'basic')
+            if profile not in ('basic', 'detailed'):
+                return reply(400, {'error': 'profileType은 basic 또는 detailed여야 합니다'})
+            item = table.get_item(Key={'id': user_id}, ConsistentRead=True).get('Item')
+            if item is None:
+                return reply(404, {'error': '사용자를 찾을 수 없습니다', 'id': user_id})
+            user = {key: item.get(key) for key in ('id', 'name', 'email')} if profile == 'basic' else item
+            return reply(200, {'message': f'사용자 프로필 조회 성공 ({profile})', 'user': user})
+
+        if path == '/users' and method == 'POST':
+            if event.get('isBase64Encoded'):
+                return reply(400, {'error': '이 실습은 일반 JSON 본문을 사용합니다'})
+            raw = event.get('body')
+            if not isinstance(raw, str):
+                return reply(400, {'error': 'body는 JSON 문자열이어야 합니다'})
+            try:
+                body = json.loads(raw, parse_float=Decimal, parse_constant=reject_constant)
+            except (ValueError, TypeError):
+                return reply(400, {'error': '올바른 JSON 본문이 필요합니다'})
+            if not isinstance(body, dict):
+                return reply(400, {'error': 'JSON 본문은 객체여야 합니다'})
+            for key in ('id', 'name', 'email'):
+                if not isinstance(body.get(key), str) or not body[key].strip():
+                    return reply(400, {'error': f'{key}는 비어 있지 않은 문자열이어야 합니다'})
+            age = body.get('age')
+            if age is not None and (isinstance(age, bool) or not isinstance(age, (int, Decimal)) or age < 0 or age > 150 or age != int(age)):
+                return reply(400, {'error': 'age는 0~150의 정수여야 합니다'})
+            # PutItem replaces the whole item; it is not a partial update.
+            result = table.put_item(Item=body, ReturnValues='ALL_OLD')
+            replaced = bool(result.get('Attributes'))
+            return reply(200 if replaced else 201, {
+                'message': '사용자 전체 교체 성공' if replaced else '사용자 생성 성공',
+                'id': body['id'],
+            })
+
+        if path == '/users' or path.startswith('/users/'):
+            allowed = 'GET, POST' if path == '/users' else 'GET'
+            return reply(405, {'error': '지원하지 않는 HTTP 메서드'}, {'Allow': allowed})
+        return reply(404, {'error': '지원하지 않는 경로'})
+    except Exception:
+        logger.exception('Users API request failed')
+        return reply(500, {'error': '내부 서버 오류'})
+```
 
 ### 1.3 Lambda 자체 테스트
 
@@ -196,14 +303,38 @@ learningObjectives:
 
 ## 태스크 5: HTML 웹 화면과 S3 URL
 
-### 5.1 HTML 다운로드와 로컬 확인
+### 5.1 HTML 소스 저장과 로컬 확인
 
-1. [index.html 다운로드](/files/week9/console-26/index.html)를 우클릭하여 링크를 다른 이름으로 저장합니다. 파일 이름은 `index.html`, 형식은 HTML로 보관합니다.
+1. 아래 **index.html 전체 코드**를 복사하여 메모장 또는 VS Code에 붙여넣습니다. **다른 이름으로 저장 → 파일 이름: index.html → 파일 형식: 모든 파일 → 인코딩: UTF-8**로 저장합니다. `index.html.txt`가 되지 않도록 파일 확장자를 확인합니다. 코드 블록의 시작/끝 표시인 백틱 세 개는 파일에 넣지 않습니다.
 2. 브라우저에서 파일을 엽니다. **API 연결 주소** 입력란에 태스크 4의 **/dev/users 전체 API URL**을 붙여넣습니다.
 3. **연결 확인 · 사용자 조회**를 누르면 상태·사용자 표가 표시됩니다.
 4. **사용자 등록 후 확인**을 눌러 POST와 GET 재조회를 확인합니다. 같은 테스트 ID는 전체 교체합니다. 새 항목을 만들려면 **새 테스트 ID**를 누릅니다.
 
 HTML에는 AWS 키를 넣지 않습니다. 이 HTML은 공개 REST API만 호출합니다. 브라우저의 로컬 파일 제한으로 호출이 실패하면 아래 S3 HTTPS URL에서 테스트합니다.
+
+#### index.html 전체 코드
+
+API 연결 주소는 실행한 화면의 입력란에 `/dev/users`까지 입력합니다. 코드에 AWS 키나 계정 비밀번호를 넣지 않습니다. 파일을 저장한 뒤 브라우저로 열거나 아래 S3 업로드 절차를 진행합니다.
+
+```html
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CA9-3 사용자 관리</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#eef3fa;color:#182b49;font:16px system-ui,sans-serif}main{max-width:1100px;margin:28px auto;padding:20px}header{background:#142b4e;color:white;padding:28px;border-radius:18px}h1{margin:6px 0;font-size:30px}small{opacity:.8}.card{background:white;border:1px solid #dce5f2;border-radius:16px;padding:24px;margin-top:18px;box-shadow:0 5px 20px #19365c08}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}label{display:block;font-weight:600;margin-bottom:6px}input{font:inherit;width:100%;padding:12px;border:1px solid #cbd6e5;border-radius:8px}button{font:inherit;border:0;border-radius:9px;padding:12px 20px;background:#2563eb;color:white;cursor:pointer;margin:10px 8px 0 0}button:disabled{opacity:.5;cursor:wait}.muted{color:#61738c}#status{padding:14px;background:#edf4ff;border-radius:8px;margin:14px 0;white-space:pre-wrap}table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:13px;border-bottom:1px solid #e4eaf3}th{background:#f5f8fc}.table-wrap{overflow:auto}details{margin-top:16px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6fa;padding:14px}@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:10px}h1{font-size:24px}}</style>
+<main><header><small>CLOUD ARCHITECTURE · WEEK 9-3</small><h1>서버리스 사용자 관리</h1><p>웹 브라우저 → API Gateway → Lambda → DynamoDB</p></header>
+<section class="card"><label for="endpoint">API 연결 주소</label><input id="endpoint" type="url" placeholder="https://[api-id].execute-api.ap-northeast-2.amazonaws.com/dev/users"><button id="refresh">연결 확인 · 사용자 조회</button><div id="status" role="status">연결 준비 중…</div><p class="muted">이 화면은 브라우저에서 API를 직접 호출합니다. JSON 데이터는 아래 사용자 표로 표시됩니다.</p></section>
+<section class="card"><h2>사용자 등록</h2><p class="muted">실습용 정보만 입력하세요. 같은 ID로 등록하면 기존 항목 전체가 교체됩니다.</p><form id="form"><div class="grid"><div><label for="uid">사용자 ID</label><input id="uid" required readonly></div><div><label for="uname">이름</label><input id="uname" value="웹실습 사용자" required maxlength="100"></div><div><label for="email">이메일</label><input id="email" type="email" value="web-lab@example.com" required></div><div><label for="age">나이</label><input id="age" type="number" min="0" max="150" step="1" value="28" required></div><div><label for="dept">학과·부서</label><input id="dept" value="소프트웨어학과"></div></div><button type="submit">사용자 등록 후 확인</button><button type="button" id="newid">새 테스트 ID</button></form></section>
+<section class="card"><h2>사용자 목록 <span id="count">—</span></h2><div class="table-wrap"><table><thead><tr><th>ID</th><th>이름</th><th>이메일</th><th>나이</th><th>학과·부서</th></tr></thead><tbody id="users"></tbody></table></div><details><summary>원본 JSON 응답 보기</summary><pre id="raw"></pre></details></section></main>
+<script>
+(()=>{const $=id=>document.getElementById(id);$('endpoint').value='';let busy=false;
+function newId(){$('uid').value='ca93-web-'+(crypto.randomUUID?crypto.randomUUID().replaceAll('-',''):Math.random().toString(36).slice(2)).slice(0,12)}
+function status(s){$('status').textContent=s}
+function setBusy(v){busy=v;document.querySelectorAll('button').forEach(b=>b.disabled=v)}
+function url(){const u=new URL($('endpoint').value.trim());if(u.protocol!=='https:'||!u.pathname.endsWith('/users'))throw Error('HTTPS 주소와 /users 경로를 확인하세요.');return u.href}
+async function request(method,payload){const start=performance.now();const r=await fetch(url(),{method,mode:'cors',credentials:'omit',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,signal:AbortSignal.timeout(30000)});const text=await r.text();let data;try{data=JSON.parse(text)}catch{throw Error('JSON이 아닌 응답: HTTP '+r.status)}$('raw').textContent=JSON.stringify(data,null,2);if(!r.ok)throw Error('HTTP '+r.status+': '+(data.error||data.message||text));return {data,code:r.status,ms:Math.round(performance.now()-start)}}
+function render(data){if(!Array.isArray(data.users))throw Error('응답에 users 배열이 없습니다.');$('users').replaceChildren();for(const u of data.users){const tr=document.createElement('tr');for(const key of ['id','name','email','age','department']){const td=document.createElement('td');td.textContent=u[key]??'—';tr.appendChild(td)}$('users').appendChild(tr)}$('count').textContent='('+data.users.length+'명)'}
+async function load(){if(busy)return;setBusy(true);status('조회 중…');try{const r=await request('GET');render(r.data);status('✅ 연결 성공 · GET HTTP '+r.code+' · '+r.ms+'ms · '+new Date().toLocaleTimeString())}catch(e){status('❌ '+e.message+'\n연결 주소·배포 상태·CORS 설정을 확인하세요.')}finally{setBusy(false)}}
+$('refresh').onclick=load;$('newid').onclick=newId;$('form').onsubmit=async e=>{e.preventDefault();if(busy)return;setBusy(true);status('등록 중…');try{const payload={id:$('uid').value,name:$('uname').value.trim(),email:$('email').value.trim(),age:Number($('age').value),department:$('dept').value.trim()};const p=await request('POST',payload);const r=await request('GET');render(r.data);if(!r.data.users.some(u=>u.id===payload.id))throw Error('등록 후 재조회에서 ID를 찾지 못했습니다.');status('✅ '+p.data.message+' · POST HTTP '+p.code+' · 저장 후 재조회 확인 완료')}catch(e){status('❌ '+e.message)}finally{setBusy(false)}};newId();status('API 연결 주소를 입력한 뒤 사용자 조회를 누르세요.');})();
+</script></html>
+```
 
 ### 5.2 AWS 콘솔에서 HTML 업로드
 
