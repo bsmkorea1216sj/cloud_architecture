@@ -456,7 +456,7 @@ export const curriculum: WeekCurriculum[] = [
       {
         session: 3,
         type: 'lab',
-        title: 'Amazon API Gateway 서비스 구축',
+        title: 'Amazon API Gateway 서비스 구축 (26)',
         hasContent: true,
         markdownPath: '/content/week9/9-3-api-gateway.md',
         description:
