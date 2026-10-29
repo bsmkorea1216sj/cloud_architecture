@@ -33,6 +33,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Validate Week 9 Lambda examples
+        run: |
+          python3 scripts/test_week9_lambda.py
+          unzip -q public/files/week9/week9-2-lambda-function.zip -d /tmp/week9-lambda-check
+          for script in /tmp/week9-lambda-check/*.sh; do bash -n "$script"; done
+
       - name: Build
         run: npm run build
         env:
