@@ -48,21 +48,6 @@ learningObjectives:
 >
 > 이 실습에서는 Lambda 함수로 DynamoDB 테이블의 사용자 데이터를 조회하고 생성하는 RESTful API를 구현합니다.
 
-## 코랩에서 실행할 경우
-
-[CA9-2 코랩 노트북](https://colab.research.google.com/drive/1FuQPyDit0zRlyTG8-sEto-ikY7tVP9Ky)을 사용하는 경우에도 **인증 → 테이블 확인·샘플 준비 → 함수 정의 → 기능 테스트 → Lambda 배포 → 실제 Lambda 호출 → 모니터링** 순서를 지킵니다. 코랩에서 핸들러를 직접 호출하는 테스트는 AWS Lambda 호출이 아니므로 Lambda Invocations에 집계되지 않습니다.
-
-- `boto3` 설치는 AWS CLI 설치와 다릅니다. `!aws`나 셸 스크립트를 쓰려면 먼저 아래 설치·확인을 실행하세요. Boto3 전용 코드에는 CLI가 필요하지 않습니다.
-- AWS 키는 코랩 보안비밀 `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`에서 읽고 출력하거나 저장하지 않습니다. 리전은 `AWS_REGION` 또는 서울 리전으로 명시합니다.
-- 이전에 생성한 통합 셸 코드의 `[cite: …]` 문자열은 실행 코드가 아니므로 제거해야 합니다. 아래 ZIP의 원본 스크립트에는 해당 문자열이 없습니다.
-- 구축 명령이 실패했는데 완료 문구만 출력되면 성공으로 판단하지 마세요. 실제 테이블 상태와 IAM 역할을 조회합니다.
-- `lambda_handler`를 정의하기 전에 호출하면 `NameError`가 발생합니다. 아래 3.1 코드를 먼저 실행하세요. 코랩에서는 Boto3 세션·테이블 연결에 보안비밀 인증을 사용하고, Lambda에서는 실행 역할을 사용합니다.
-
-```python
-!pip -q install boto3 awscli
-!aws --version
-```
-
 ## 태스크 0: 사전 환경 구축
 
 > [!NOTE]
@@ -611,3 +596,18 @@ CloudWatch 자동 로깅
 - [PutItem의 전체 교체 동작](https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_PutItem.html)
 - [Lambda 지표와 Duration](https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics-types.html)
 - [API Gateway 이벤트 형식 1.0과 2.0](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+
+## 코랩에서 실행할 경우
+
+[CA9-2 코랩 노트북](https://colab.research.google.com/drive/1FuQPyDit0zRlyTG8-sEto-ikY7tVP9Ky)을 사용하는 경우에도 **인증 → 테이블 확인·샘플 준비 → 함수 정의 → 기능 테스트 → Lambda 배포 → 실제 Lambda 호출 → 모니터링** 순서를 지킵니다. 코랩에서 핸들러를 직접 호출하는 테스트는 AWS Lambda 호출이 아니므로 Lambda Invocations에 집계되지 않습니다.
+
+- `boto3` 설치는 AWS CLI 설치와 다릅니다. `!aws`나 셸 스크립트를 쓰려면 먼저 아래 설치·확인을 실행하세요. Boto3 전용 코드에는 CLI가 필요하지 않습니다.
+- AWS 키는 코랩 보안비밀 `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`에서 읽고 출력하거나 저장하지 않습니다. 리전은 `AWS_REGION` 또는 서울 리전으로 명시합니다.
+- 이전에 생성한 통합 셸 코드의 `[cite: …]` 문자열은 실행 코드가 아니므로 제거해야 합니다. 위 다운로드 ZIP의 원본 스크립트에는 해당 문자열이 없습니다.
+- 구축 명령이 실패했는데 완료 문구만 출력되면 성공으로 판단하지 마세요. 실제 테이블 상태와 IAM 역할을 조회합니다.
+- `lambda_handler`를 정의하기 전에 호출하면 `NameError`가 발생합니다. 앞의 3.1 코드를 먼저 실행하세요. 코랩에서는 Boto3 세션·테이블 연결에 보안비밀 인증을 사용하고, Lambda에서는 실행 역할을 사용합니다.
+
+```python
+!pip -q install boto3 awscli
+!aws --version
+```

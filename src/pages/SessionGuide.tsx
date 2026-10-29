@@ -168,6 +168,7 @@ export const SessionGuide: React.FC = () => {
     sessionNumber: string;
   }>();
   const [markdownContent, setMarkdownContent] = useState<string>('');
+  const [colabContent, setColabContent] = useState<string>('');
   const [cleanupContent, setCleanupContent] = useState<string>('');
   const [referenceContent, setReferenceContent] = useState<string>('');
   const [additionalResourcesContent, setAdditionalResourcesContent] =
@@ -199,6 +200,12 @@ export const SessionGuide: React.FC = () => {
         try {
           const data = await loadMarkdownFile(sessionData.markdownPath);
           let content = data.content;
+
+          // Keep the optional Colab appendix after all lesson cards.
+          const colabMatch = content.match(/\n## 코랩에서 실행할 경우[\s\S]*?(?=\n## |\n# |$)/);
+          const colabSection = colabMatch?.[0].trim() || '';
+          if (colabMatch) content = content.replace(colabMatch[0], '');
+          setColabContent(colabSection);
 
           // 역순으로 분리: 참고 → 추가 학습 리소스 → 리소스 정리
 
@@ -492,7 +499,12 @@ export const SessionGuide: React.FC = () => {
                           </SpaceBetween>
                         </Box>
                       ),
-                    ].filter(Boolean)}
+                      colabContent && (
+          <Container key="colab-card" id="colab">
+            <MarkdownRenderer content={colabContent} />
+          </Container>
+        ),
+      ].filter(Boolean)}
                   </ColumnLayout>
                 </Box>
               )}
