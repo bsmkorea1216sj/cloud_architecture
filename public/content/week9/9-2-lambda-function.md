@@ -1,5 +1,5 @@
 ---
-title: 'AWS Lambda 함수 개발'
+title: 'AWS Lambda 함수 개발 2(26)'
 week: 9
 session: 2
 awsServices:
@@ -9,6 +9,21 @@ learningObjectives:
   - AWS Lambda 함수를 개발하고 이벤트 소스를 구성할 수 있습니다.
   - AWS Lambda 함수를 배포하고 모니터링할 수 있습니다.
 ---
+
+> [!NOTE]
+> **2(26) 수정본 · 2026-10-29 반영**
+>
+> 기존 자료를 백업한 뒤 교안과 다운로드 ZIP을 수정했습니다.
+> - Python 3.12 기준 통일 및 코랩 실행 순서·AWS CLI 설치 안내
+> - Scan 페이지 처리, 필수 입력 검증, 누락 필드 처리
+> - 신규 생성 201 / 기존 항목 전체 교체 200 구분과 재실행 결과 설명
+> - REST API v1.0 이벤트 및 실제 HTTP 연결 범위 명시
+> - Duration·Init Duration·Errors 설명 정정
+> - IAM 정책·로그 그룹 정리와 리소스별 삭제 확인 보완
+> - 모의 API 20개 검사, ZIP 코드 일치·셸 구문·사이트 빌드 검사 통과
+>
+> [수정 전 원본 백업](https://github.com/bsmkorea1216sj/cloud_architecture/tree/backup/week9-2-before-fix-20261029)
+
 
 > [!TIP]
 > 이 실습에서는 서버 없이 코드를 실행하는 **AWS Lambda** 함수를 생성하고, **DynamoDB**와 연동하여 사용자 데이터를 관리하는 **서버리스 API 처리 함수**를 구현합니다. 이번 차시는 Lambda 테스트 이벤트로 동작을 확인하며, 실제 HTTP 호출 URL은 9-3 API Gateway 실습에서 생성합니다.
