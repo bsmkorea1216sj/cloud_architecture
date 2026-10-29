@@ -441,7 +441,7 @@ export const curriculum: WeekCurriculum[] = [
       {
         session: 2,
         type: 'lab',
-        title: 'AWS Lambda 함수 개발',
+        title: 'AWS Lambda 함수 개발 2(26)',
         hasContent: true,
         markdownPath: '/content/week9/9-2-lambda-function.md',
         description:
