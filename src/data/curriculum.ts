@@ -497,7 +497,7 @@ export const curriculum: WeekCurriculum[] = [
       {
         session: 2,
         type: 'lab',
-        title: 'Amazon ECS 서비스 배포',
+        title: 'Amazon ECS 서비스 배포 (26)',
         hasContent: true,
         markdownPath: '/content/week10/10-2-ecs-service-deploy.md',
         description:
