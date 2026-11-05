@@ -492,24 +492,61 @@ ECR에 저장된 이미지를 Amazon ECS 등 AWS 컨테이너 서비스에서 �
 
 ## 코랩에서 실행할 경우
 
-코랩은 **AWS 인증 확인, ECR 저장소 준비, 푸시 결과 검증**에 사용합니다. Docker 이미지 빌드와 `docker run`은 콘솔에서 연 CloudShell에서 진행합니다. CloudShell과 코랩이 **같은 AWS 계정과 서울 리전**을 가리키는지 확인하세요.
+CloudShell 대신 코랩에서 **전체 과정을 진행**하고 웹 앱의 **HTML 화면을 코랩 안에서 확인**할 수 있습니다. 코랩에는 Docker 엔진이 없으므로 `docker build`, `docker run`, `docker push`는 **AWS CodeBuild**가 대신 실행하고, 코랩은 명령을 보내고 결과를 보여줍니다.
+
+| 가이드 | 코랩 셀 | 실행 위치 |
+|---|---|---|
+| 실습 준비: 계정·리전 확인 | 셀 1–2 | 코랩 |
+| 태스크 2: Node.js 앱 생성 | 셀 3–6 | 코랩 |
+| HTML 화면 미리 보기 | 셀 7 | 코랩에서 Node.js로 실행 |
+| 태스크 5.1: ECR 저장소 생성 | 셀 8 | 코랩 → ECR |
+| 태스크 1·3·4·5.2: Docker 확인 → 빌드 → `8080:3000` 실행 → `/health` → 푸시 | 셀 9–11 | CodeBuild |
+| 태스크 5.3: `latest` 태그와 컨테이너 화면 확인 | 셀 12 | 코랩 |
+| 리소스 정리 | 셀 13 | 코랩 |
+
+> [!WARNING]
+> 코랩 방식은 S3 버킷, CodeBuild 프로젝트, IAM 역할을 새로 만듭니다. 실습 자격 증명에 STS, ECR, S3, CodeBuild, CloudWatch Logs 권한과 `iam:CreateRole`, `iam:PutRolePolicy`, `iam:PassRole` 권한이 필요합니다. IAM 역할을 만들 수 없으면 담당자가 준 CodeBuild 역할 ARN을 셀 2의 `EXISTING_ROLE_ARN`에 넣습니다. CodeBuild는 빌드 시간(보통 2–4분)만큼 요금이 발생하므로 실습 후 셀 13으로 정리합니다.
 
 **셀 1 · 설치**  
 
+`boto3`를 설치하고, Node.js가 없거나 18 미만이면 Node.js 24를 설치합니다.
+
 ```python
 %pip -q install boto3
+
+import shutil, subprocess
+
+def node_major():
+    if not shutil.which("node"):
+        return 0
+    version = subprocess.run(["node", "-v"], capture_output=True, text=True).stdout
+    return int(version.strip().lstrip("v").split(".")[0])
+
+if node_major() < 18:
+    !curl -fsSL https://deb.nodesource.com/setup_24.x | bash - > /dev/null
+    !apt-get install -y -qq nodejs > /dev/null
+
+!node -v
+!npm -v
 ```
 
-**셀 2 · AWS 인증 확인**  
+**셀 2 · AWS 인증 확인과 실습 이름 설정**  
 
-수업에서 발급한 실습 자격 증명을 Colab 왼쪽 **보안 비밀**에 등록하고 노트북 접근을 허용합니다. `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`를 사용하며, 임시 자격 증명이면 `AWS_SESSION_TOKEN`도 함께 등록합니다. 키는 코드에 붙여넣거나 출력하지 않습니다. 코랩용 자격 증명이 없는 학생은 위 콘솔 실습을 진행합니다.
+수업에서 발급한 실습 자격 증명을 Colab 왼쪽 **보안 비밀**에 등록하고 노트북 접근을 허용합니다. `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`를 사용하며, 임시 자격 증명이면 `AWS_SESSION_TOKEN`도 함께 등록합니다. 키는 코드에 붙여넣거나 출력하지 않습니다. 공유 계정이면 `SUFFIX`에 본인을 구분하는 소문자 접미사(예: `-s01`)를 넣습니다.
 
 ```python
 import boto3
 from google.colab import userdata
 
 REGION = "ap-northeast-2"
-REPO = "cloudarchitect-lab-app"  # 배정된 학생별 이름이 있으면 변경
+SUFFIX = ""             # 공유 계정이면 소문자 접미사 (예: "-s01")
+EXISTING_ROLE_ARN = ""  # 담당자가 CodeBuild 역할을 준 경우 ARN 입력
+
+REPO = f"cloudarchitect-lab-app{SUFFIX}"
+PROJECT = f"cloudarchitect-lab-docker-build{SUFFIX}"
+ROLE_NAME = f"cloudarchitect-lab-codebuild-role{SUFFIX}"
+POLICY_NAME = "cloudarchitect-lab-codebuild"
+
 try:
     token = userdata.get("AWS_SESSION_TOKEN")
 except userdata.SecretNotFoundError:
@@ -522,48 +559,439 @@ session = boto3.Session(
     region_name=REGION,
 )
 account = session.client("sts").get_caller_identity()["Account"]
+BUCKET = f"cloudarchitect-lab-{account}-{REGION}{SUFFIX}"
+REGISTRY = f"{account}.dkr.ecr.{REGION}.amazonaws.com"
+
 ecr = session.client("ecr")
+s3 = session.client("s3")
+iam = session.client("iam")
+cb = session.client("codebuild")
+logs = session.client("logs")
+
 print("AWS 계정:", account, "| 리전:", REGION)
+print("ECR 저장소:", REPO, "| CodeBuild 프로젝트:", PROJECT, "| S3 버킷:", BUCKET)
 ```
 
-**셀 3 · 저장소 조회 또는 준비**  
-
-콘솔에서 만든 저장소는 조회만 합니다. 코랩에서 생성하는 경우 본인에게 배정된 이름과 계정을 확인한 뒤 `CREATE_REPOSITORY = True`로 바꿉니다.
+**셀 3 · 작업 폴더 생성**  
 
 ```python
-CREATE_REPOSITORY = False
+import os
 
-try:
-    repo = ecr.describe_repositories(repositoryNames=[REPO])["repositories"][0]
-except ecr.exceptions.RepositoryNotFoundException:
-    if not CREATE_REPOSITORY:
-        raise RuntimeError("저장소가 없습니다. 콘솔 태스크 5.1을 진행하세요.") from None
+APP_DIR = "/content/docker-lab"
+os.makedirs(APP_DIR, exist_ok=True)
+print("작업 폴더:", APP_DIR)
+```
+
+**셀 4 · package.json**  
+
+```python
+%%writefile /content/docker-lab/package.json
+{
+  "name": "cloudarchitect-lab-app",
+  "version": "1.0.0",
+  "description": "CloudArchitect Lab Docker Container Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  }
+}
+```
+
+**셀 5 · server.js**  
+
+태스크 2의 5번과 같은 Express 서버입니다. `/`는 HTML 화면을, `/health`는 상태 JSON을 돌려줍니다.
+
+```python
+%%writefile /content/docker-lab/server.js
+const express = require('express');
+const app = express();
+const port = 3000;
+
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <title>CloudArchitect Week 10-1 Docker App</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 40px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                text-align: center;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                background: rgba(255,255,255,0.1);
+                padding: 40px;
+                border-radius: 10px;
+            }
+            h1 { font-size: 2.5em; margin-bottom: 20px; }
+            .info { font-size: 1.2em; margin: 20px 0; }
+            .highlight { color: #FFD700; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🐳 CloudArchitect Week 10-1 Docker Application</h1>
+            <div class="info">
+                <p>Docker 컨테이너가 성공적으로 실행되고 있습니다.</p>
+                <p class="highlight">CloudArchitect AWS 가이드 - Week 10-1</p>
+                <p>실행 시간: ${new Date().toLocaleString()}</p>
+                <p>포트: 3000</p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `);
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    message: 'CloudArchitect Week 10-1 Docker App is running'
+  });
+});
+
+app.listen(port, () => {
+  console.log(`CloudArchitect Week 10-1 Docker App running on port ${port}`);
+});
+```
+
+**셀 6 · Dockerfile**  
+
+태스크 3.1과 같은 Dockerfile입니다.
+
+```python
+%%writefile /content/docker-lab/Dockerfile
+FROM public.ecr.aws/docker/library/node:24-alpine
+
+LABEL maintainer="CloudArchitect Student"
+LABEL description="CloudArchitect Week 10-1 Docker Container Application"
+LABEL version="1.0"
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --omit=dev && npm cache clean --force
+
+COPY server.js .
+
+RUN addgroup -g 10001 -S nodejs && \
+    adduser -S appuser -u 10001 && \
+    chown -R appuser:nodejs /app
+USER appuser
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+CMD ["npm", "start"]
+```
+
+**셀 7 · HTML 화면 미리 보기**  
+
+같은 `server.js`를 코랩에서 Node.js로 실행해 화면을 셀 안에 표시합니다. 코랩에는 Docker가 없으므로 앱 포트 3000을 직접 엽니다. `-p 8080:3000` 실행은 셀 11의 CodeBuild에서 진행합니다. 화면이 비어 있으면 `output.serve_kernel_port_as_window(3000)`을 실행해 새 탭으로 엽니다.
+
+```python
+import json, subprocess, time, urllib.request
+from google.colab import output
+
+!cd /content/docker-lab && npm install --omit=dev --no-audit --no-fund --silent
+
+if "server" in globals() and server.poll() is None:
+    server.terminate()
+    server.wait()
+
+server = subprocess.Popen(
+    ["node", "server.js"],
+    cwd=APP_DIR,
+    stdout=open(f"{APP_DIR}/server.log", "w"),
+    stderr=subprocess.STDOUT,
+)
+
+for _ in range(20):
     try:
-        repo = ecr.create_repository(repositoryName=REPO)["repository"]
-    except ecr.exceptions.RepositoryAlreadyExistsException:
-        repo = ecr.describe_repositories(repositoryNames=[REPO])["repositories"][0]
+        with urllib.request.urlopen("http://localhost:3000/health", timeout=2) as r:
+            health = json.load(r)
+        break
+    except OSError:
+        time.sleep(1)
+else:
+    raise RuntimeError("서버가 시작되지 않았습니다. /content/docker-lab/server.log를 확인하세요.")
+
+print("GET /health →", health)
+output.serve_kernel_port_as_iframe(3000, height=460)
+```
+
+**셀 8 · ECR 저장소 만들기**  
+
+이미 있으면 그대로 사용합니다. 공유 계정이라면 본인에게 배정된 저장소인지 확인합니다.
+
+```python
+try:
+    repo = ecr.create_repository(repositoryName=REPO)["repository"]
+    print("저장소를 만들었습니다.")
+except ecr.exceptions.RepositoryAlreadyExistsException:
+    repo = ecr.describe_repositories(repositoryNames=[REPO])["repositories"][0]
+    print("기존 저장소를 사용합니다.")
 
 print("ECR 저장소 URI:", repo["repositoryUri"])
 ```
 
-**셀 4 · CloudShell에서 푸시한 뒤 확인**  
+**셀 9 · 빌드 명령 buildspec.yml**  
 
-위 가이드 태스크 2–5로 빌드·실행·푸시를 완료한 뒤 실행합니다.
+CodeBuild가 실행할 명령입니다. 태스크 1·3·4·5.2에서 CloudShell에 입력하는 명령과 같은 순서입니다.
 
 ```python
-try:
-    image = ecr.describe_images(
-        repositoryName=REPO,
-        imageIds=[{"imageTag": "latest"}],
-    )["imageDetails"][0]
-except ecr.exceptions.ImageNotFoundException:
-    raise RuntimeError("latest 태그가 없습니다. CloudShell의 docker push 결과를 확인하세요.") from None
-print("업로드 확인:", f"{repo['repositoryUri']}:latest")
-print("이미지 다이제스트:", image["imageDigest"])
+%%writefile /content/docker-lab/buildspec.yml
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "== 태스크 1. Docker 환경 확인 =="
+      - docker version
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+  build:
+    commands:
+      - echo "== 태스크 3. 이미지 빌드 =="
+      - docker build -t cloudarchitect-lab-app:latest .
+      - docker images cloudarchitect-lab-app
+      - echo "== 태스크 4. 컨테이너 실행 8080 -> 3000 =="
+      - docker run -d --name cloudarchitect-lab-app -p 8080:3000 cloudarchitect-lab-app:latest
+      - for i in $(seq 1 15); do curl -sf http://localhost:8080/health > health.json && break; sleep 2; done
+      - docker ps
+      - cat health.json
+      - grep -q '"status":"healthy"' health.json
+      - curl -sf http://localhost:8080 > index.html
+      - docker logs cloudarchitect-lab-app
+      - echo "== 태스크 5. ECR 푸시 =="
+      - docker tag cloudarchitect-lab-app:latest $ECR_REGISTRY/$REPO:latest
+      - docker push $ECR_REGISTRY/$REPO:latest
+
+artifacts:
+  files:
+    - health.json
+    - index.html
 ```
+
+**셀 10 · CodeBuild 준비**  
+
+S3 버킷을 만들고 앱 파일을 업로드한 뒤, CodeBuild 서비스 역할과 Docker를 쓸 수 있는(privileged) 프로젝트를 만듭니다. 새 IAM 역할은 반영되는 데 수십 초가 걸릴 수 있어 프로젝트 생성을 몇 번 다시 시도합니다.
+
+```python
+import io, json, time, zipfile
+
+# 1) S3 버킷
+try:
+    s3.create_bucket(Bucket=BUCKET, CreateBucketConfiguration={"LocationConstraint": REGION})
+    print("S3 버킷을 만들었습니다:", BUCKET)
+except s3.exceptions.BucketAlreadyOwnedByYou:
+    print("기존 S3 버킷을 사용합니다:", BUCKET)
+
+# 2) 소스 압축 업로드
+buf = io.BytesIO()
+with zipfile.ZipFile(buf, "w") as z:
+    for name in ["package.json", "server.js", "Dockerfile", "buildspec.yml"]:
+        z.write(f"{APP_DIR}/{name}", name)
+s3.put_object(Bucket=BUCKET, Key="source/docker-lab.zip", Body=buf.getvalue())
+print("소스 업로드:", f"s3://{BUCKET}/source/docker-lab.zip")
+
+# 3) CodeBuild 서비스 역할
+if EXISTING_ROLE_ARN:
+    role_arn = EXISTING_ROLE_ARN
+else:
+    trust = {
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Service": "codebuild.amazonaws.com"},
+            "Action": "sts:AssumeRole",
+        }],
+    }
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {"Effect": "Allow",
+             "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+             "Resource": "*"},
+            {"Effect": "Allow",
+             "Action": ["s3:GetObject", "s3:GetObjectVersion", "s3:PutObject",
+                        "s3:GetBucketLocation", "s3:GetBucketAcl"],
+             "Resource": [f"arn:aws:s3:::{BUCKET}", f"arn:aws:s3:::{BUCKET}/*"]},
+            {"Effect": "Allow", "Action": "ecr:GetAuthorizationToken", "Resource": "*"},
+            {"Effect": "Allow",
+             "Action": ["ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload",
+                        "ecr:UploadLayerPart", "ecr:CompleteLayerUpload", "ecr:PutImage",
+                        "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"],
+             "Resource": repo["repositoryArn"]},
+        ],
+    }
+    try:
+        role_arn = iam.create_role(
+            RoleName=ROLE_NAME, AssumeRolePolicyDocument=json.dumps(trust)
+        )["Role"]["Arn"]
+        print("IAM 역할을 만들었습니다:", ROLE_NAME)
+    except iam.exceptions.EntityAlreadyExistsException:
+        role_arn = iam.get_role(RoleName=ROLE_NAME)["Role"]["Arn"]
+        print("기존 IAM 역할을 사용합니다:", ROLE_NAME)
+    iam.put_role_policy(RoleName=ROLE_NAME, PolicyName=POLICY_NAME, PolicyDocument=json.dumps(policy))
+
+# 4) CodeBuild 프로젝트
+project = dict(
+    name=PROJECT,
+    source={"type": "S3", "location": f"{BUCKET}/source/docker-lab.zip"},
+    artifacts={"type": "S3", "location": BUCKET, "path": "output", "name": "build", "packaging": "NONE"},
+    environment={
+        "type": "LINUX_CONTAINER",
+        "image": "aws/codebuild/standard:7.0",
+        "computeType": "BUILD_GENERAL1_SMALL",
+        "privilegedMode": True,
+        "environmentVariables": [
+            {"name": "REPO", "value": REPO},
+            {"name": "ECR_REGISTRY", "value": REGISTRY},
+        ],
+    },
+    serviceRole=role_arn,
+    timeoutInMinutes=15,
+)
+for attempt in range(12):
+    try:
+        try:
+            cb.create_project(**project)
+            print("CodeBuild 프로젝트를 만들었습니다:", PROJECT)
+        except cb.exceptions.ResourceAlreadyExistsException:
+            cb.update_project(**project)
+            print("CodeBuild 프로젝트 설정을 갱신했습니다:", PROJECT)
+        break
+    except cb.exceptions.InvalidInputException as e:
+        if "role" not in str(e).lower() or attempt == 11:
+            raise
+        print("IAM 역할이 반영되는 중입니다. 10초 후 다시 시도합니다.")
+        time.sleep(10)
+```
+
+**셀 11 · 빌드 실행과 로그 확인**  
+
+빌드는 보통 2–4분 걸립니다. 로그에서 `docker version`, `docker images`, `docker ps`의 `0.0.0.0:8080->3000/tcp`, `/health`의 `healthy`, `docker push` 결과를 차례로 확인합니다.
+
+```python
+build_id = cb.start_build(projectName=PROJECT)["build"]["id"]
+print("빌드 시작:", build_id)
+
+phase = None
+while True:
+    build = cb.batch_get_builds(ids=[build_id])["builds"][0]
+    if build["currentPhase"] != phase:
+        phase = build["currentPhase"]
+        print(time.strftime("%H:%M:%S"), phase)
+    if build["buildStatus"] != "IN_PROGRESS":
+        break
+    time.sleep(10)
+
+print("빌드 결과:", build["buildStatus"])
+print("-" * 60)
+
+log = build.get("logs", {})
+if log.get("groupName") and log.get("streamName"):
+    events = logs.get_log_events(
+        logGroupName=log["groupName"], logStreamName=log["streamName"], startFromHead=True
+    )["events"]
+    print("".join(e["message"] for e in events))
+
+if build["buildStatus"] != "SUCCEEDED":
+    raise RuntimeError("빌드가 실패했습니다. 위 로그의 마지막 오류를 확인하세요.")
+```
+
+**셀 12 · 컨테이너 화면과 ECR latest 확인**  
+
+CodeBuild에서 실행한 컨테이너가 돌려준 `/health` 응답과 HTML 화면을 표시하고, ECR에 `latest` 이미지가 있는지 확인합니다.
+
+```python
+import html, json
+from IPython.display import HTML, display
+
+objects = s3.list_objects_v2(Bucket=BUCKET, Prefix="output/").get("Contents", [])
+keys = {o["Key"].rsplit("/", 1)[-1]: o["Key"] for o in objects}
+
+container_health = json.loads(s3.get_object(Bucket=BUCKET, Key=keys["health.json"])["Body"].read())
+print("컨테이너 GET /health →", container_health)
+assert container_health["status"] == "healthy", "healthy가 아닙니다."
+
+page = s3.get_object(Bucket=BUCKET, Key=keys["index.html"])["Body"].read().decode("utf-8")
+print("컨테이너 GET / 화면:")
+display(HTML(f'<iframe srcdoc="{html.escape(page)}" style="width:100%;height:460px;border:0"></iframe>'))
+
+image = ecr.describe_images(repositoryName=REPO, imageIds=[{"imageTag": "latest"}])["imageDetails"][0]
+print("ECR 이미지:", f"{repo['repositoryUri']}:latest")
+print("이미지 다이제스트:", image["imageDigest"])
+print("푸시 시각:", image["imagePushedAt"])
+```
+
+**셀 13 · 실습 리소스 삭제**  
+
+`CLEANUP = True`로 바꾸고 실행하면 코랩 Node.js 서버, ECR 저장소, CodeBuild 프로젝트와 로그, S3 버킷, 이 노트북이 만든 IAM 역할을 삭제합니다. `EXISTING_ROLE_ARN`을 쓴 경우 역할은 삭제하지 않습니다. 공용 ECR 저장소를 썼다면 저장소를 지우지 말고 담당자 지시에 따라 본인 태그만 정리합니다.
+
+```python
+CLEANUP = False  # 실습을 마친 뒤 True로 바꾸고 실행
+
+def empty_and_delete_bucket():
+    for pg in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET):
+        for o in pg.get("Contents", []):
+            s3.delete_object(Bucket=BUCKET, Key=o["Key"])
+    s3.delete_bucket(Bucket=BUCKET)
+
+def delete_role():
+    iam.delete_role_policy(RoleName=ROLE_NAME, PolicyName=POLICY_NAME)
+    iam.delete_role(RoleName=ROLE_NAME)
+
+if CLEANUP:
+    if "server" in globals() and server.poll() is None:
+        server.terminate()
+        print("삭제: 코랩 Node.js 서버")
+    steps = [
+        ("ECR 저장소", lambda: ecr.delete_repository(repositoryName=REPO, force=True)),
+        ("CodeBuild 프로젝트", lambda: cb.delete_project(name=PROJECT)),
+        ("CodeBuild 로그 그룹", lambda: logs.delete_log_group(logGroupName=f"/aws/codebuild/{PROJECT}")),
+        ("S3 버킷", empty_and_delete_bucket),
+    ]
+    if not EXISTING_ROLE_ARN:
+        steps.append(("IAM 역할", delete_role))
+    for name, fn in steps:
+        try:
+            fn()
+            print("삭제:", name)
+        except Exception as e:
+            print("건너뜀:", name, "-", type(e).__name__)
+else:
+    print("CLEANUP = True로 바꾸고 다시 실행하면 실습 리소스를 삭제합니다.")
+```
+
+**문제 해결**  
+
+| 증상 | 확인할 것 |
+|---|---|
+| 셀 2에서 `SecretNotFoundError` 또는 `NotebookAccessError` | 보안 비밀 이름과 노트북 접근 허용 스위치 |
+| 셀 2에서 `ExpiredToken` | 임시 자격 증명이 만료됨. 새 값으로 보안 비밀을 바꾸고 셀 2부터 다시 실행 |
+| 셀 7 화면이 비어 있음 | `output.serve_kernel_port_as_window(3000)`으로 새 탭에서 열기 |
+| 셀 10에서 `AccessDenied` (`iam:CreateRole`) | 담당자에게 CodeBuild 역할 ARN을 받아 `EXISTING_ROLE_ARN`에 입력 |
+| 셀 11에서 `AccountLimitExceededException` | 새 계정의 CodeBuild 동시 실행 한도. 담당자에게 문의 |
+| 셀 11 로그의 `docker push`에서 `denied` | 셀 8의 저장소 이름과 `REPO`가 같은지, 역할 정책이 반영됐는지 확인 |
 
 참고 문서
 
 - [CloudShell에서 Docker 빌드 및 ECR 푸시](https://docs.aws.amazon.com/cloudshell/latest/userguide/tutorial-docker-cli.html)
 - [CloudShell 접근 권한](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html)
+- [CodeBuild에서 Docker 이미지 빌드 및 ECR 푸시](https://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker.html)
+- [CodeBuild buildspec 참조](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html)
 - [Node.js 릴리스 지원 현황](https://nodejs.org/en/about/previous-releases)
