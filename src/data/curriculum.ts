@@ -482,7 +482,7 @@ export const curriculum: WeekCurriculum[] = [
       {
         session: 1,
         type: 'lab',
-        title: 'Docker 컨테이너 이미지 빌드',
+        title: 'Docker 컨테이너 이미지 빌드 (26)',
         hasContent: true,
         markdownPath: '/content/week10/10-1-docker-container.md',
         description:
