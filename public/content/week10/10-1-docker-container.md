@@ -24,22 +24,32 @@ learningObjectives:
 >
 > 가상머신(VM)과 달리 컨테이너는 OS 커널을 공유하므로 가볍고 빠르게 시작됩니다.
 
+## 실습 시작 전 · AWS 계정과 콘솔 준비
+
+**교안 25–27페이지**를 보면서 진행합니다. 이번 실습은 **CloudShell에서 Node.js 컨테이너를 빌드하고 ECR에 저장**하는 데까지입니다. 29페이지의 Nginx 예제는 레이어 설명용이며, 30페이지의 ECS 배포는 10-2에서 진행합니다.
+
+1. 수업에서 제공한 **AWS 실습 계정 또는 역할**로 콘솔에 로그인합니다. 교육 포털에서 계정을 시작하는 방식이라면 세션이 활성화된 뒤 AWS 콘솔을 엽니다. 계정이 아직 배정되지 않았다면 담당자에게 요청합니다.
+2. 콘솔 오른쪽 위에서 계정과 역할을 확인하고 **서울(ap-northeast-2)** 리전을 선택합니다.
+3. 실습 역할에는 CloudShell 시작 및 콘솔 자격 증명 전달, ECR 비공개 저장소 생성·조회와 이미지 푸시 권한이 필요합니다. 수업 종료 시 정리하는 역할에는 실습 저장소 삭제 권한도 필요합니다. 권한 오류가 나면 작업 이름과 오류 메시지를 담당자에게 전달합니다.
+4. CloudShell은 콘솔 로그인 자격 증명을 사용합니다. PC에 AWS CLI나 Docker를 설치하거나 액세스 키를 발급할 필요가 없습니다.
+
 ## 태스크 1: Docker 환경 설정
 
 ### 1.1 CloudShell에서 Docker 환경 확인
 
-1. AWS Management Console에 로그인한 후 상단의 **CloudShell** 아이콘을 선택하여 CloudShell을 실행합니다.
+1. 콘솔 상단의 **CloudShell** 아이콘을 누르고 서울 리전의 기본 환경을 엽니다. 터미널 프롬프트가 나타날 때까지 기다립니다.
 
-2. Docker 버전을 확인합니다:
+2. 아래 명령을 한 줄씩 실행해 로그인 계정과 Docker 서버 상태를 확인합니다.
 
 ```bash
-docker --version
+export AWS_REGION=ap-northeast-2
+export AWS_DEFAULT_REGION=ap-northeast-2
+aws sts get-caller-identity
+docker version
 ```
 
-> [!OUTPUT]
-> ```
-> Docker version 25.x.x, build xxxxxxx
-> ```
+> [!NOTE]
+> STS 출력의 Account가 배정된 계정과 일치하고, Docker 출력에 Client와 Server가 모두 표시되어야 합니다. 서버가 연결되지 않으면 CloudShell 환경이 준비되었는지 확인하고 새 세션에서 다시 시도합니다.
 
 3. 작업 디렉토리를 생성합니다:
 
@@ -151,7 +161,7 @@ SERVEREOF
 >
 > | 명령어 | 설명 | 예시 |
 > |--------|------|------|
-> | `FROM` | 베이스 이미지를 지정합니다 | `FROM node:18-alpine` |
+> | `FROM` | 베이스 이미지를 지정합니다 | `FROM node:24-alpine` |
 > | `LABEL` | 이미지 메타데이터를 추가합니다 | `LABEL version="1.0"` |
 > | `WORKDIR` | 컨테이너 내 작업 디렉토리를 설정합니다 | `WORKDIR /app` |
 > | `COPY` | 호스트 파일을 컨테이너로 복사합니다 | `COPY package.json ./` |
@@ -189,8 +199,8 @@ SERVEREOF
 
 ```bash
 cat > ~/docker-lab/Dockerfile << 'EOF'
-# 베이스 이미지 지정 - Alpine Linux 기반의 경량 Node.js 18 이미지
-FROM node:18-alpine
+# 베이스 이미지 지정 - Alpine Linux 기반의 경량 Node.js 24 LTS 이미지
+FROM node:24-alpine
 
 # 메타데이터 - 이미지에 대한 정보를 레이블로 추가
 LABEL maintainer="CloudArchitect Student"
@@ -203,8 +213,8 @@ WORKDIR /app
 # 패키지 파일 복사 및 의존성 설치
 # package.json과 package-lock.json을 먼저 복사하여 Docker 레이어 캐싱 최적화
 COPY package*.json ./
-# --only=production: 개발 의존성 제외, npm cache clean: 캐시 삭제로 이미지 크기 감소
-RUN npm install --only=production && npm cache clean --force
+# --omit=dev: 개발 의존성 제외, npm cache clean: 캐시 삭제로 이미지 크기 감소
+RUN npm install --omit=dev && npm cache clean --force
 
 # 애플리케이션 코드 복사
 # 의존성 설치 후 코드를 복사하면 코드 변경 시 의존성 재설치를 방지할 수 있음
@@ -212,8 +222,8 @@ COPY server.js .
 
 # 비특권 사용자 생성 및 전환 (보안 모범 사례)
 # root 권한으로 컨테이너를 실행하지 않아 보안 위험을 줄임
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S appuser -u 1001 && \
+RUN addgroup -g 10001 -S nodejs && \
+    adduser -S appuser -u 10001 && \
     chown -R appuser:nodejs /app
 USER appuser
 
@@ -257,11 +267,11 @@ docker images cloudarchitect-lab-app
 > [!OUTPUT]
 > ```
 > REPOSITORY                TAG       IMAGE ID       CREATED          SIZE
-> cloudarchitect-lab-app    latest    abc123def456   10 seconds ago   ~180MB
+> cloudarchitect-lab-app    latest    abc123def456   10 seconds ago   (환경별로 다름)
 > ```
 
 > [!NOTE]
-> Alpine 기반 이미지를 사용하여 이미지 크기가 약 180MB로 경량화되었습니다. 일반 Node.js 이미지(~1GB)에 비해 크게 줄어듭니다.
+> 이미지 ID와 크기는 베이스 이미지 버전 및 빌드 환경에 따라 달라집니다. REPOSITORY와 TAG를 확인하세요.
 
 ✅ **태스크 완료**: Dockerfile을 작성하고 Docker 이미지를 빌드했습니다.
 
@@ -298,7 +308,7 @@ docker ps
 
 ### 4.2 애플리케이션 테스트
 
-11. 웹 페이지 응답을 확인합니다:
+11. **같은 CloudShell 터미널에서** 웹 페이지 응답을 확인합니다. 여기서 localhost는 학생 PC가 아니라 Docker를 실행한 CloudShell 호스트입니다.
 
 ```bash
 curl http://localhost:8080
@@ -338,11 +348,9 @@ docker logs cloudarchitect-lab-app
 
 ### 5.1 Amazon ECR 리포지토리 생성
 
-14. ECR 리포지토리를 생성합니다:
+14. AWS 콘솔 검색창에서 **Elastic Container Registry**를 엽니다. 서울 리전의 **Private registry → Repositories → Create repository**를 선택합니다. 이름은 `cloudarchitect-lab-app`으로 지정하고 생성합니다. 공유 계정이라면 담당자가 지정한 학생별 저장소 이름을 사용하고, 아래 태그·푸시·검증·정리 명령에도 같은 이름을 적용합니다.
 
-```bash
-aws ecr create-repository --repository-name cloudarchitect-lab-app --region ap-northeast-2
-```
+   저장소 상세 화면에서 **URI**를 복사합니다. 형식은 `계정ID.dkr.ecr.ap-northeast-2.amazonaws.com/cloudarchitect-lab-app`입니다. 재실습에서 기존 저장소를 사용하려면 본인에게 배정된 저장소인지 먼저 확인합니다.
 
 15. 계정 ID를 변수에 저장합니다:
 
@@ -424,29 +432,11 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 docker rmi $ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/cloudarchitect-lab-app:latest
 ```
 
-4. 작업 디렉토리를 삭제합니다:
-
-```bash
-rm -rf ~/docker-lab
-```
+4. 작업 파일은 다시 실습할 때 재사용할 수 있습니다. 삭제하려면 `~/docker-lab`에 본인 실습 파일만 있는지 확인한 뒤 정리합니다.
 
 ### 태스크 2: Amazon ECR 리포지토리 삭제
 
-5. ECR 리포지토리를 삭제합니다:
-
-```bash
-aws ecr delete-repository --repository-name cloudarchitect-lab-app --region ap-northeast-2 --force
-```
-
-> [!OUTPUT]
-> ```json
-> {
->     "repository": {
->         "repositoryName": "cloudarchitect-lab-app",
->         "registryId": "xxxxxxxxxxxx"
->     }
-> }
-> ```
+5. **ECR 콘솔 → 서울 → Private registry → Repositories**에서 본인 실습용 저장소를 선택합니다. 이미지를 삭제한 후 저장소를 삭제합니다. 공용 저장소라면 담당자 지시에 따라 본인 태그만 정리합니다.
 
 ### 태스크 3: 최종 확인
 
@@ -476,3 +466,82 @@ Docker 이미지를 빌드하고 로컬에서 컨테이너를 실행하여 애�
 🚀
 배포 준비
 ECR에 저장된 이미지를 Amazon ECS 등 AWS 컨테이너 서비스에서 배포할 수 있습니다
+
+
+## 코랩에서 실행할 경우
+
+코랩은 **AWS 인증 확인, ECR 저장소 준비, 푸시 결과 검증**에 사용합니다. Docker 이미지 빌드와 `docker run`은 콘솔에서 연 CloudShell에서 진행합니다. CloudShell과 코랩이 **같은 AWS 계정과 서울 리전**을 가리키는지 확인하세요.
+
+**셀 1 · 설치**  
+
+```python
+%pip -q install boto3
+```
+
+**셀 2 · AWS 인증 확인**  
+
+수업에서 발급한 실습 자격 증명을 Colab 왼쪽 **보안 비밀**에 등록하고 노트북 접근을 허용합니다. `AWS_ACCESS_KEY`, `AWS_SECRET_KEY`를 사용하며, 임시 자격 증명이면 `AWS_SESSION_TOKEN`도 함께 등록합니다. 키는 코드에 붙여넣거나 출력하지 않습니다. 코랩용 자격 증명이 없는 학생은 위 콘솔 실습을 진행합니다.
+
+```python
+import boto3
+from google.colab import userdata
+
+REGION = "ap-northeast-2"
+REPO = "cloudarchitect-lab-app"  # 배정된 학생별 이름이 있으면 변경
+try:
+    token = userdata.get("AWS_SESSION_TOKEN")
+except userdata.SecretNotFoundError:
+    token = None
+
+session = boto3.Session(
+    aws_access_key_id=userdata.get("AWS_ACCESS_KEY"),
+    aws_secret_access_key=userdata.get("AWS_SECRET_KEY"),
+    aws_session_token=token,
+    region_name=REGION,
+)
+account = session.client("sts").get_caller_identity()["Account"]
+ecr = session.client("ecr")
+print("AWS 계정:", account, "| 리전:", REGION)
+```
+
+**셀 3 · 저장소 조회 또는 준비**  
+
+콘솔에서 만든 저장소는 조회만 합니다. 코랩에서 생성하는 경우 본인에게 배정된 이름과 계정을 확인한 뒤 `CREATE_REPOSITORY = True`로 바꿉니다.
+
+```python
+CREATE_REPOSITORY = False
+
+try:
+    repo = ecr.describe_repositories(repositoryNames=[REPO])["repositories"][0]
+except ecr.exceptions.RepositoryNotFoundException:
+    if not CREATE_REPOSITORY:
+        raise RuntimeError("저장소가 없습니다. 콘솔 태스크 5.1을 진행하세요.") from None
+    try:
+        repo = ecr.create_repository(repositoryName=REPO)["repository"]
+    except ecr.exceptions.RepositoryAlreadyExistsException:
+        repo = ecr.describe_repositories(repositoryNames=[REPO])["repositories"][0]
+
+print("ECR 저장소 URI:", repo["repositoryUri"])
+```
+
+**셀 4 · CloudShell에서 푸시한 뒤 확인**  
+
+위 가이드 태스크 2–5로 빌드·실행·푸시를 완료한 뒤 실행합니다.
+
+```python
+try:
+    image = ecr.describe_images(
+        repositoryName=REPO,
+        imageIds=[{"imageTag": "latest"}],
+    )["imageDetails"][0]
+except ecr.exceptions.ImageNotFoundException:
+    raise RuntimeError("latest 태그가 없습니다. CloudShell의 docker push 결과를 확인하세요.") from None
+print("업로드 확인:", f"{repo['repositoryUri']}:latest")
+print("이미지 다이제스트:", image["imageDigest"])
+```
+
+참고 문서
+
+- [CloudShell에서 Docker 빌드 및 ECR 푸시](https://docs.aws.amazon.com/cloudshell/latest/userguide/tutorial-docker-cli.html)
+- [CloudShell 접근 권한](https://docs.aws.amazon.com/cloudshell/latest/userguide/sec-auth-with-identities.html)
+- [Node.js 릴리스 지원 현황](https://nodejs.org/en/about/previous-releases)
