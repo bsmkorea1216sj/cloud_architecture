@@ -202,7 +202,8 @@ SERVEREOF
 ```bash
 cat > ~/docker-lab/Dockerfile << 'EOF'
 # 베이스 이미지 지정 - Alpine Linux 기반의 경량 Node.js 24 LTS 이미지
-FROM node:24-alpine
+# Docker Hub 공식 이미지(node:24-alpine)와 같은 이미지를 Amazon ECR Public에서 받음
+FROM public.ecr.aws/docker/library/node:24-alpine
 
 # 메타데이터 - 이미지에 대한 정보를 레이블로 추가
 LABEL maintainer="CloudArchitect Student"
@@ -242,6 +243,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 CMD ["npm", "start"]
 EOF
 ```
+
+> [!NOTE]
+> 베이스 이미지는 Docker Hub의 `node:24-alpine`과 같은 공식 이미지를 **Amazon ECR Public** 경로에서 받습니다. 여러 학생이 동시에 빌드해도 Docker Hub의 비로그인 다운로드 제한(`toomanyrequests`)에 걸리지 않습니다.
 
 > [!TIP]
 > `USER appuser`로 비특권 사용자를 사용하면 컨테이너가 root 권한으로 실행되지 않아 보안이 강화됩니다. 프로덕션 환경에서는 반드시 적용해야 하는 모범 사례입니다.
@@ -287,6 +291,13 @@ docker images cloudarchitect-lab-app
 ```bash
 docker run -d --name cloudarchitect-lab-app -p 8080:3000 cloudarchitect-lab-app:latest
 ```
+
+> [!WARNING]
+> 다시 실행할 때 `Conflict. The container name "/cloudarchitect-lab-app" is already in use` 오류가 나면 이전 컨테이너를 지운 뒤 위 명령을 다시 실행합니다.
+>
+> ```bash
+> docker rm -f cloudarchitect-lab-app
+> ```
 
 > [!NOTE]
 > Docker run 옵션 설명:
@@ -347,6 +358,15 @@ docker logs cloudarchitect-lab-app
 > [!CONCEPT] Amazon ECR(Elastic Container Registry)
 >
 > Amazon ECR은 Docker 컨테이너 이미지를 저장, 관리, 배포하는 **완전 관리형 컨테이너 레지스트리**입니다. Amazon ECS, EKS 등 AWS 컨테이너 서비스와 네이티브로 통합되며, IAM 기반 접근 제어를 제공합니다.
+
+> [!WARNING]
+> CloudShell은 키보드나 마우스 입력이 20–30분 없으면 세션이 종료됩니다. `~/docker-lab`의 파일은 남지만 빌드한 이미지와 실행 중인 컨테이너, 설정한 변수는 사라질 수 있습니다. 세션이 다시 시작되었다면 먼저 이미지가 있는지 확인합니다.
+>
+> ```bash
+> docker images cloudarchitect-lab-app
+> ```
+>
+> 목록이 비어 있으면 **7번 이미지 빌드**부터 다시 실행합니다. 이어서 **15번**에서 `ACCOUNT_ID`를 다시 설정한 뒤 로그인·태그·푸시를 진행합니다.
 
 ### 5.1 Amazon ECR 리포지토리 생성
 
@@ -427,7 +447,7 @@ docker rm cloudarchitect-lab-app
 docker rmi cloudarchitect-lab-app:latest
 ```
 
-3. ECR 이미지도 삭제합니다 (계정 ID 확인):
+3. ECR 푸시용으로 붙인 로컬 태그를 삭제합니다. 이 명령은 CloudShell에 있는 태그만 지우며, ECR에 올라간 이미지는 다음 태스크 2에서 콘솔로 삭제합니다.
 
 ```bash
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -446,7 +466,7 @@ docker rmi $ACCOUNT_ID.dkr.ecr.ap-northeast-2.amazonaws.com/cloudarchitect-lab-a
 
 7. 왼쪽 메뉴에서 **Repositories**를 선택합니다.
 
-8. `cloudarchitect-lab-app` 리포지토리가 목록에 없는지 확인합니다.
+8. 본인 실습용 리포지토리(`cloudarchitect-lab-app` 또는 배정된 이름)가 목록에 없는지 확인합니다. 공용 저장소를 사용했다면 저장소 안에 본인 태그가 남아 있지 않은지 확인합니다.
 
 9. CloudShell에서 Docker 이미지 목록을 확인합니다:
 
