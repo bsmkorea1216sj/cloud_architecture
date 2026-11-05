@@ -1,5 +1,5 @@
 ---
-title: 'Docker 컨테이너 이미지 빌드'
+title: 'Docker 컨테이너 이미지 빌드 (26)'
 week: 10
 session: 1
 awsServices:
