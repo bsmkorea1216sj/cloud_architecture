@@ -1001,3 +1001,5 @@ else:
 [Colab에서 Fargate 자동 배포 실습 열기](https://colab.research.google.com/drive/1F1s7-KqL8kljZvzEL6oHU_Mm7F2cHGyH#scrollTo=ca10-fargate-5)
 
 처음 실행할 때는 노트북의 **AWS Fargate 자동 실습 (26)**에서 의존성 설치 셀부터 순서대로 실행하세요. 배포가 완료되면 링크가 가리키는 결과 셀에서 웹앱 URL을 확인할 수 있습니다.
+
+[Colab에서 실습 종료 및 AWS 리소스 정리 안내 열기](https://colab.research.google.com/drive/1F1s7-KqL8kljZvzEL6oHU_Mm7F2cHGyH#scrollTo=ca10-fargate-6)
