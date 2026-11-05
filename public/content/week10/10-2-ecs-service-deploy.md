@@ -1,5 +1,5 @@
 ---
-title: 'Amazon ECS 서비스 배포'
+title: 'Amazon ECS 서비스 배포 (26)'
 week: 10
 session: 2
 awsServices:
@@ -11,11 +11,13 @@ learningObjectives:
   - Amazon ECS를 활용하여 컨테이너화된 애플리케이션을 배포하고 관리할 수 있습니다.
 ---
 
+# Amazon ECS 서비스 배포 (26)
+
 > [!TIP]
 > 이 실습에서는 **Amazon ECS Fargate**로 컨테이너 애플리케이션을 배포합니다. **ECS 클러스터**를 생성하고, **태스크 정의**로 컨테이너 이미지와 리소스 설정을 지정합니다. **Application Load Balancer**를 생성하여 트래픽을 분산하고, **ECS 서비스**로 지정된 수의 태스크를 실행합니다. 서비스가 실행되면 **로드 밸런서 DNS**로 접속하여 컨테이너 애플리케이션이 정상적으로 동작하는지 확인합니다.
 
 > [!DOWNLOAD]
-> [week10-2-ecs-service-deploy.zip](/files/week10/week10-2-ecs-service-deploy.zip)
+> [week10-2-ecs-service-deploy.zip](https://bsmkorea1216sj.github.io/cloud_architecture/files/week10/week10-2-ecs-service-deploy.zip)
 >
 > **포함 파일:**
 > 
@@ -54,6 +56,22 @@ learningObjectives:
 > - **서비스(Service)**: 지정된 수의 태스크를 유지하고 로드 밸런서와 연동합니다
 > - **AWS Fargate**: 서버를 관리하지 않고 컨테이너를 실행하는 서버리스 컴퓨팅 엔진입니다
 
+## 실습 시작 전 · AWS 콘솔과 계정
+
+1. 수업에서 배정된 계정 또는 역할로 AWS 콘솔에 로그인합니다. 교육 포털을 사용한다면 실습 세션이 활성화된 뒤 콘솔을 엽니다.
+2. 계정과 역할을 확인하고 **서울(ap-northeast-2)** 리전을 선택합니다. CloudShell 기본 환경을 열어 아래 명령으로 계정과 Docker 상태를 확인합니다.
+3. CloudShell, VPC·EC2 네트워크, ECR, ECS, Elastic Load Balancing, CloudWatch Logs, 실행 역할 설정 및 `iam:PassRole` 권한이 필요합니다. 처음 사용하는 계정에서는 ECS의 서비스 연결 역할 생성 권한도 필요할 수 있습니다. 권한 오류는 작업 이름과 오류 메시지를 담당자에게 전달합니다.
+4. **10-2의 setup 스크립트**로 VPC와 ECR 이미지를 준비합니다. 10-1에서 만든 `cloudarchitect-lab-app` 이미지 대신 10-2의 `cloudarchitect-lab-webapp:latest`를 사용합니다. NAT Gateway·로드 밸런서·Fargate는 비용이 발생할 수 있으므로 실습 후 정리 절차를 완료합니다.
+
+```bash
+export AWS_REGION=ap-northeast-2
+export AWS_DEFAULT_REGION=ap-northeast-2
+aws sts get-caller-identity
+docker version
+```
+
+계정 ID가 배정된 계정과 같고 Docker 출력에 Client와 Server가 모두 표시되는지 확인합니다.
+
 ## 태스크 0: 사전 환경 구축
 
 > [!NOTE]
@@ -76,7 +94,7 @@ learningObjectives:
 - **태스크 3**: ECR의 이미지를 사용하여 태스크 정의를 생성합니다
 - **태스크 4**: Application Load Balancer를 생성하여 트래픽을 분산합니다
 - **태스크 5**: ECS 서비스를 생성하고 컨테이너를 배포합니다
-- **태스크 6**: 서비스 스케일링과 롤링 업데이트를 테스트합니다
+- **태스크 6**: ALB 주소로 접속하고 ECS 서비스 상태와 대상 그룹의 healthy 상태를 확인합니다
 
 > [!TIP]
 > 사전 환경 구축 스크립트는 네트워크 인프라와 컨테이너 이미지를 자동으로 준비하므로, 여러분은 ECS의 핵심 컨테이너 오케스트레이션 기능 학습에만 집중할 수 있습니다.
@@ -237,7 +255,7 @@ chmod +x setup-10-2.sh cleanup-10-2.sh
 > - **Port name**: ALB가 트래픽을 전달할 때 참조하는 이름 (선택사항)
 > - **App protocol**: HTTP, HTTPS 등 애플리케이션 프로토콜 (ALB 헬스 체크용)
 >
-> 이 실습에서는 Node.js 앱이 포트 3000에서 실행되므로 Container port를 3000으로 설정합니다. Fargate를 사용하면 호스트 포트는 자동으로 할당되므로 지정할 필요가 없습니다.
+> 이 실습에서는 Node.js 앱이 포트 3000에서 실행되므로 Container port를 3000으로 설정합니다. Fargate의 awsvpc 네트워크 모드에서는 컨테이너 포트 3000을 지정합니다. 호스트 포트를 입력하는 경우 컨테이너 포트와 같아야 합니다.
 
 38. [[Create]] 버튼을 클릭합니다.
 
@@ -567,3 +585,72 @@ ALB와 Target Group을 생성하여 여러 태스크에 트래픽을 분산했�
 🔄
 ECS 서비스
 지정된 수의 태스크를 자동으로 유지하고 장애 시 자동 복구하는 서비스를 배포했습니다
+
+
+## 코랩에서 실행할 경우
+
+코랩으로 **계정 확인과 배포 결과 조회**를 할 수 있습니다. 사전 구축 스크립트는 AWS 콘솔에서 연 CloudShell에서 실행하고, ECS·ALB 구성은 위 콘솔 절차를 따릅니다.
+
+**셀 1 · 설치**
+
+```python
+%pip -q install boto3
+```
+
+**셀 2 · 인증과 환경 확인**
+
+수업에서 발급한 자격 증명을 Colab 보안 비밀에 `AWS_ACCESS_KEY`와 `AWS_SECRET_KEY`로 저장하고 노트북 접근을 허용합니다. 임시 자격 증명은 `AWS_SESSION_TOKEN`도 등록합니다. 콘솔과 코랩의 계정·리전이 같은지 확인합니다.
+
+```python
+import boto3
+from google.colab import userdata
+
+REGION = "ap-northeast-2"
+try:
+    token = userdata.get("AWS_SESSION_TOKEN")
+except userdata.SecretNotFoundError:
+    token = None
+
+session = boto3.Session(
+    aws_access_key_id=userdata.get("AWS_ACCESS_KEY"),
+    aws_secret_access_key=userdata.get("AWS_SECRET_KEY"),
+    aws_session_token=token,
+    region_name=REGION,
+)
+account = session.client("sts").get_caller_identity()["Account"]
+print("AWS 계정:", account, "| 리전:", REGION)
+```
+
+**셀 3 · 태스크 0 이후 이미지 확인**
+
+```python
+REPO = "cloudarchitect-lab-webapp"
+ecr = session.client("ecr")
+repo = ecr.describe_repositories(repositoryNames=[REPO])["repositories"][0]
+image = ecr.describe_images(
+    repositoryName=REPO, imageIds=[{"imageTag": "latest"}]
+)["imageDetails"][0]
+print("태스크 정의용 이미지:", f"{repo['repositoryUri']}:latest")
+print("다이제스트:", image["imageDigest"])
+```
+
+**셀 4 · 태스크 5 이후 서비스와 대상 그룹 확인**
+
+```python
+CLUSTER = "CloudArchitect-Lab-Cluster"
+SERVICE = input("콘솔에 표시된 ECS 서비스 이름: ").strip()
+ecs = session.client("ecs")
+result = ecs.describe_services(cluster=CLUSTER, services=[SERVICE])
+if not result["services"]:
+    raise RuntimeError("서비스 이름, 계정, 리전을 확인하세요.")
+service = result["services"][0]
+print("실행 중 / 목표:", service["runningCount"], "/", service["desiredCount"])
+
+elbv2 = session.client("elbv2")
+for mapping in service["loadBalancers"]:
+    targets = elbv2.describe_target_health(TargetGroupArn=mapping["targetGroupArn"])
+    for target in targets["TargetHealthDescriptions"]:
+        print(target["Target"]["Id"], target["TargetHealth"]["State"])
+```
+
+콘솔에서도 목표 태스크 2개가 실행되고 대상이 `healthy`인지 확인합니다. 브라우저에서 ALB의 HTTP 주소를 열어 앱 응답을 확인한 뒤, 가이드의 리소스 정리를 완료합니다.
