@@ -11,7 +11,7 @@
 | 코랩 실습자료 폴더 | `CA실습자료` (folder id `1V1x7aJ37AX8Cyhhpk6_IaJ7p2SyvEpca`) |
 | 11-1(26).pptx | id `1GDS8uSk2jlFlybv877cEMCAEGhksnhbZ` |
 | CA11-1 실습과제1 노트북 | [1uyrbEzc9E8II8IhYRsSkYuRSi4oDn5n5](https://colab.research.google.com/drive/1uyrbEzc9E8II8IhYRsSkYuRSi4oDn5n5) (링크가 있는 사용자 보기 공유) |
-| CA11-1 실습과제2 노트북 | [1Ih65s9xM_Z3DhdWvMNiyTD5MRhDWr3j2](https://colab.research.google.com/drive/1Ih65s9xM_Z3DhdWvMNiyTD5MRhDWr3j2) (공유 설정 전) |
+| CA11-1 실습과제2 노트북 | [1Ih65s9xM_Z3DhdWvMNiyTD5MRhDWr3j2](https://colab.research.google.com/drive/1Ih65s9xM_Z3DhdWvMNiyTD5MRhDWr3j2) (링크가 있는 사용자 보기 공유) |
 
 ## 2. 차시별 진행 상황
 
@@ -44,11 +44,10 @@
 - 가이드 `public/content/week11/11-2-cloudfront-deploy.md`와 `src/data/curriculum.ts` 제목 (26) 수정은 **로컬에만 있고 아직 커밋하지 않았습니다**(강의자 확인 대기).
 
 ## 3. 확인 필요 / 다음 할 일
-1. 실습과제2 노트북을 링크가 있는 사용자 보기로 공유할지 결정합니다(13쪽 노트북은 공유 완료).
-2. `11-2(26).pptx`의 "9-3 이벤트 앱", "9-3 이벤트 관리 앱" 표현이 9-3 가이드(사용자 관리 앱)와 다릅니다. 고칠지 결정이 필요합니다.
-3. 11-2 가이드 변경분을 커밋할지 결정합니다.
-4. 10-3 실습 가이드 초안을 작성합니다.
-5. 실습과제2 노트북을 실습 계정에서 한 번 끝까지 실행해 확인합니다.
+1. `11-2(26).pptx`의 "9-3 이벤트 앱", "9-3 이벤트 관리 앱" 표현이 9-3 가이드(사용자 관리 앱)와 다릅니다. 고칠지 결정이 필요합니다.
+2. 11-2 가이드 변경분을 커밋할지 결정합니다.
+3. 10-3 실습 가이드 초안을 작성합니다.
+4. 실습과제2 노트북을 실습 계정에서 한 번 끝까지 실행해 확인합니다.
 
 ## 4. 작업 시 주의
 - 강의자가 Google Slides에서 동시에 편집합니다. 쓰기 직전 Drive 수정 시각을 다시 확인하고, 바뀌었으면 최신본을 다시 받아 그 위에 적용합니다.
