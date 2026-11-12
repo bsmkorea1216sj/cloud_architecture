@@ -162,11 +162,19 @@ const renderInlineCode = (text: string): React.ReactNode[] => {
   return parts;
 };
 
-export const SessionGuide: React.FC = () => {
-  const { weekNumber, sessionNumber } = useParams<{
+interface SessionGuideProps {
+  /** /ICT 처럼 URL 파라미터 없이 특정 차시를 보여줄 때 사용 */
+  fixedWeek?: number;
+  fixedSession?: number;
+}
+
+export const SessionGuide: React.FC<SessionGuideProps> = ({ fixedWeek, fixedSession }) => {
+  const params = useParams<{
     weekNumber: string;
     sessionNumber: string;
   }>();
+  const weekNumber = fixedWeek !== undefined ? String(fixedWeek) : params.weekNumber;
+  const sessionNumber = fixedSession !== undefined ? String(fixedSession) : params.sessionNumber;
   const [markdownContent, setMarkdownContent] = useState<string>('');
   const [colabContent, setColabContent] = useState<string>('');
   const [cleanupContent, setCleanupContent] = useState<string>('');

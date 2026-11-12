@@ -8,7 +8,12 @@ import {
   Box,
 } from '@cloudscape-design/components';
 import { useTheme } from '@/contexts/ThemeContext';
-import { curriculum, sessionTypeConfig } from '@/data/curriculum';
+import {
+  curriculum,
+  sessionTypeConfig,
+  standaloneSessions,
+  weekSessions,
+} from '@/data/curriculum';
 import { siteTitle } from '@/data/siteConfig';
 import { HelpPanelContent } from '../education';
 import '@/styles/app-layout.css';
@@ -99,6 +104,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       items: [
         { type: 'link' as const, text: '📚 커리큘럼', href: '/dashboard' },
         { type: 'link' as const, text: '⚙️ 환경 설정', href: '/setup' },
+        ...standaloneSessions.map(({ session, path }) => ({
+          type: 'link' as const,
+          text: `${sessionTypeConfig[session.type].emoji} ${session.title}`,
+          href: path,
+        })),
       ],
     },
     { type: 'divider' as const },
@@ -106,7 +116,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     ...curriculum
       .map((week) => {
         // 실습/데모/시험 차시만 필터링 (theory 제외)
-        const visibleSessions = week.sessions.filter(
+        const visibleSessions = weekSessions(week).filter(
           (session) => session.type !== 'theory',
         );
 
@@ -144,6 +154,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
     } else if (currentPath === '/setup') {
       breadcrumbs.push({ text: '시작하기', href: '#' });
       breadcrumbs.push({ text: '⚙️ 환경 설정', href: '/setup' });
+    } else if (standaloneSessions.some((s) => s.path === currentPath)) {
+      const s = standaloneSessions.find((x) => x.path === currentPath)!;
+      breadcrumbs.push({ text: '시작하기', href: '#' });
+      breadcrumbs.push({
+        text: `${sessionTypeConfig[s.session.type].emoji} ${s.session.title}`,
+        href: currentPath,
+      });
     } else if (currentPath.startsWith('/week/')) {
       const pathParts = currentPath.split('/');
       const weekNumber = parseInt(pathParts[2]);

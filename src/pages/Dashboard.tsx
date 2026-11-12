@@ -11,7 +11,7 @@ import {
   StatusIndicator,
   Icon,
 } from '@cloudscape-design/components';
-import { curriculum } from '@/data/curriculum';
+import { curriculum, weekSessions } from '@/data/curriculum';
 import { siteConfig, siteTitle, semesterInfo } from '@/data/siteConfig';
 import '@/styles/dashboard.css';
 import '@/styles/info-boxes.css';
@@ -255,7 +255,7 @@ export const Dashboard: React.FC = () => {
                 {/* 차시 목록 */}
                 {week.sessions && week.sessions.length > 0 ? (
                   <ColumnLayout columns={3}>
-                    {week.sessions.slice(0, 3).map((session, idx) => {
+                    {weekSessions(week).slice(0, 3).map((session, idx) => {
                       const hasLink =
                         session.hasContent &&
                         (session.type === 'lab' || session.type === 'demo');

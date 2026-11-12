@@ -5,6 +5,7 @@ import {
   Route,
   useLocation,
   useNavigate,
+  Navigate,
 } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProgressProvider } from './contexts/ProgressContext';
@@ -17,6 +18,7 @@ import { MidtermExam } from './pages/MidtermExam';
 import { FinalExam } from './pages/FinalExam';
 import { SessionGuide } from './pages/SessionGuide';
 import { WeekOverview } from './pages/WeekOverview';
+import { standaloneSessions } from './data/curriculum';
 import '@cloudscape-design/global-styles/index.css';
 import './styles/theme.css';
 import './styles/responsive.css';
@@ -65,6 +67,20 @@ function AppContent() {
               path="/week/:weekNumber/session/:sessionNumber"
               element={<SessionGuide />}
             />
+            {standaloneSessions.map(({ week, session, path }) => (
+              <Route
+                key={path}
+                path={path}
+                element={<SessionGuide fixedWeek={week} fixedSession={session.session} />}
+              />
+            ))}
+            {standaloneSessions.map(({ week, session, path }) => (
+              <Route
+                key={`old-${path}`}
+                path={`/week/${week}/session/${session.session}`}
+                element={<Navigate to={path} replace />}
+              />
+            ))}
             <Route path="/midterm" element={<MidtermExam />} />
             <Route path="/final" element={<FinalExam />} />
           </Routes>

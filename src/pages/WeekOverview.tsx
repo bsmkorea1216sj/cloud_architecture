@@ -10,7 +10,7 @@ import {
   StatusIndicator,
   ColumnLayout,
 } from '@cloudscape-design/components';
-import { curriculum } from '@/data/curriculum';
+import { curriculum, weekSessions } from '@/data/curriculum';
 import '@/styles/week-overview.css';
 
 export const WeekOverview: React.FC = () => {
@@ -60,7 +60,7 @@ export const WeekOverview: React.FC = () => {
       >
         <Box padding="m">
           <ColumnLayout columns={2}>
-            {week.sessions.map((session, idx) => {
+            {weekSessions(week).map((session, idx) => {
               const hasLink =
                 session.hasContent &&
                 (session.type === 'lab' || session.type === 'demo');

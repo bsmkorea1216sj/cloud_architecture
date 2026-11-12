@@ -11,6 +11,7 @@ export interface Session {
   description?: string;
   awsServices?: string[];
   learningObjectives?: string[]; // 차시별 학습 목표
+  standalonePath?: string; // 주차 메뉴 대신 별도 주소로 제공 (예: '/ICT')
 }
 
 export interface WeekCurriculum {
@@ -583,6 +584,7 @@ export const curriculum: WeekCurriculum[] = [
         title: 'ICT 시범강의 | AI Agent 제조 모니터링 웹앱 (AWS)',
         hasContent: true,
         markdownPath: '/content/week11/11-4-ict-ai-agent-manufacturing-demo.md',
+        standalonePath: '/ICT',
         description:
           '제조 이벤트 워크플로우, AWS 네트워크 아키텍처, Colab 시뮬레이션, Codex·VS Code 연계와 AWS IoT 구현 코드를 연결하는 20분 시범강의',
         awsServices: ['AWS IoT Core', 'AWS Lambda', 'Amazon DynamoDB', 'Amazon VPC', 'Amazon ECS'],
@@ -779,3 +781,14 @@ export const sessionTypeConfig = {
   demo: { icon: 'video-on', label: '데모', color: 'green', emoji: '🎥' },
   none: { icon: 'edit', label: '시험', color: 'red', emoji: '📝' },
 } as const;
+
+/** 주차 메뉴와 분리해 별도 주소로 제공하는 차시 (예: ICT 시범강의 → /ICT) */
+export const standaloneSessions = curriculum.flatMap((w) =>
+  w.sessions
+    .filter((s) => s.standalonePath)
+    .map((s) => ({ week: w.week, session: s, path: s.standalonePath as string })),
+);
+
+/** 주차 목록에 표시할 차시 (별도 주소 차시 제외) */
+export const weekSessions = (w: WeekCurriculum): Session[] =>
+  w.sessions.filter((s) => !s.standalonePath);
