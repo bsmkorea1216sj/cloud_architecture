@@ -577,7 +577,6 @@ export const curriculum: WeekCurriculum[] = [
           'Amazon Route 53의 다양한 라우팅 정책(단순, 가중치, 지연 시간, 장애 조치 등)을 학습할 수 있습니다.',
         ],
       },
-    ],
       {
         session: 4,
         type: 'demo',
@@ -593,6 +592,7 @@ export const curriculum: WeekCurriculum[] = [
           'Colab 시뮬레이션과 Codex·VS Code 개발 흐름을 설명할 수 있습니다.',
         ],
       },
+    ],
     prerequisites: ['Week 1-10 완료'],
     estimatedTime: '180분',
     difficulty: 'advanced',
