@@ -23,11 +23,17 @@ export const PrivateMenu: React.FC = () => {
   const [week, setWeek] = useState('5');
   const [label, setLabel] = useState('');
   const [href, setHref] = useState('');
+  const [session, setSession] = useState('4');
+  const [markdown, setMarkdown] = useState<string | null>(null);
+  const [fileName, setFileName] = useState('');
   const [message, setMessage] = useState<string | null>(null);
 
   const weekNum = parseInt(week, 10);
   const valid =
-    weekNum >= 1 && weekNum <= 15 && label.trim() !== '' && /^https:\/\//.test(href.trim());
+    weekNum >= 1 &&
+    weekNum <= 15 &&
+    label.trim() !== '' &&
+    (markdown !== null || /^https:\/\//.test(href.trim()));
 
   const persist = (next: PrivateMenuItem[], msg: string) => {
     if (savePrivateMenu(next)) {
@@ -53,12 +59,21 @@ export const PrivateMenu: React.FC = () => {
                 variant="primary"
                 disabled={!valid}
                 onClick={() => {
-                  persist(
-                    [...items, { week: weekNum, label: label.trim(), href: href.trim() }],
-                    '추가했습니다. 사이드바에서 확인하세요.',
-                  );
+                  const item: PrivateMenuItem = markdown
+                    ? {
+                        week: weekNum,
+                        session: parseInt(session, 10) || 0,
+                        label: label.trim(),
+                        href: '',
+                        markdown,
+                        id: Math.random().toString(36).slice(2, 10),
+                      }
+                    : { week: weekNum, label: label.trim(), href: href.trim() };
+                  persist([...items, item], '추가했습니다. 사이드바에서 확인하세요.');
                   setLabel('');
                   setHref('');
+                  setMarkdown(null);
+                  setFileName('');
                 }}
               >
                 추가
@@ -72,7 +87,28 @@ export const PrivateMenu: React.FC = () => {
               <FormField label="메뉴 이름" description="예: 🔒 5-4. 개인 자료">
                 <Input value={label} onChange={(e) => setLabel(e.detail.value)} />
               </FormField>
-              <FormField label="링크 주소 (https://)">
+              <FormField
+                label="본문 파일 (.md)"
+                description="선택하면 다른 차시처럼 오른쪽 메인 화면에 표시됩니다. 파일 내용은 이 브라우저에만 저장됩니다."
+              >
+                <input
+                  type="file"
+                  accept=".md,text/markdown,text/plain"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    f.text().then((txt) => {
+                      setMarkdown(txt);
+                      setFileName(f.name);
+                    });
+                  }}
+                />
+                {fileName && <Box color="text-status-success">{fileName} 불러옴</Box>}
+              </FormField>
+              <FormField label="차시 번호 (본문 파일 사용 시)">
+                <Input type="number" value={session} onChange={(e) => setSession(e.detail.value)} />
+              </FormField>
+              <FormField label="또는 링크 주소 (https://)">
                 <Input value={href} onChange={(e) => setHref(e.detail.value)} />
               </FormField>
             </SpaceBetween>
@@ -86,6 +122,7 @@ export const PrivateMenu: React.FC = () => {
         columnDefinitions={[
           { id: 'week', header: '주차', cell: (i) => `${i.week}주차` },
           { id: 'label', header: '메뉴 이름', cell: (i) => i.label },
+          { id: 'kind', header: '종류', cell: (i) => (i.markdown ? '본문' : '링크') },
           {
             id: 'del',
             header: '',

@@ -19,6 +19,7 @@ import {
   loadPrivateMenu,
   PRIVATE_MENU_EVENT,
   PrivateMenuItem,
+  privateItemPath,
 } from '@/utils/privateMenu';
 import { HelpPanelContent } from '../education';
 import '@/styles/app-layout.css';
@@ -141,8 +142,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           .map((p) => ({
             type: 'link' as const,
             text: p.label,
-            href: p.href,
-            external: true,
+            href: privateItemPath(p),
+            external: !(p.markdown && p.id),
           }));
 
         // 표시할 차시가 없으면 이 주차는 메뉴에서 제외

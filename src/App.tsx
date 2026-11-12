@@ -19,6 +19,12 @@ import { FinalExam } from './pages/FinalExam';
 import { SessionGuide } from './pages/SessionGuide';
 import { WeekOverview } from './pages/WeekOverview';
 import { PrivateMenu } from './pages/PrivateMenu';
+import { useParams } from 'react-router-dom';
+
+const PrivateSession = () => {
+  const { id } = useParams<{ id: string }>();
+  return <SessionGuide key={id} privateId={id} />;
+};
 import { standaloneSessions } from './data/curriculum';
 import '@cloudscape-design/global-styles/index.css';
 import './styles/theme.css';
@@ -83,6 +89,7 @@ function AppContent() {
               />
             ))}
             <Route path="/private-menu" element={<PrivateMenu />} />
+            <Route path="/private/:id" element={<PrivateSession />} />
             <Route path="/midterm" element={<MidtermExam />} />
             <Route path="/final" element={<FinalExam />} />
           </Routes>

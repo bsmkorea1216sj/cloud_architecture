@@ -91,10 +91,28 @@ const parseFrontMatter = (text: string): { data: any; content: string } => {
 /**
  * Markdown 파일을 로드하고 메타데이터와 콘텐츠를 파싱합니다
  */
+/** 마크다운 문자열(front matter 포함)을 파싱합니다 */
+export const parseMarkdownText = (text: string): MarkdownContent => {
+  const { data, content } = parseFrontMatter(
+    text.split(String.fromCharCode(13)).join(''),
+  );
+  if (!data.title || !data.week || !data.session) {
+    throw new Error('Missing required metadata fields: title, week, session');
+  }
+  return { metadata: data as MarkdownMetadata, content };
+};
+
 export const loadMarkdownFile = async (
   path: string,
 ): Promise<MarkdownContent> => {
   try {
+    // 이 브라우저에만 저장된 개인 본문
+    if (path.startsWith('private:')) {
+      const { findPrivateItem } = await import('./privateMenu');
+      const item = findPrivateItem(path.slice('private:'.length));
+      if (!item?.markdown) throw new Error('개인 본문을 이 브라우저에서 찾을 수 없습니다.');
+      return parseMarkdownText(item.markdown);
+    }
     // base 경로 처리: path가 /로 시작하면 base 경로 추가
     const basePath = import.meta.env.BASE_URL || '/';
     const fullPath = path.startsWith('/')

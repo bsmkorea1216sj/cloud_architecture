@@ -5,8 +5,19 @@
 export interface PrivateMenuItem {
   week: number;
   label: string;
+  /** 외부 링크(https://). markdown 이 있으면 사이트 안 /private/:id 로 표시 */
   href: string;
+  /** 사이트 본문처럼 오른쪽 메인에 표시할 마크다운 (이 브라우저에만 저장) */
+  markdown?: string;
+  id?: string;
+  session?: number;
 }
+
+export const privateItemPath = (item: PrivateMenuItem): string =>
+  item.markdown && item.id ? `/private/${item.id}` : item.href;
+
+export const findPrivateItem = (id: string): PrivateMenuItem | undefined =>
+  loadPrivateMenu().find((i) => i.id === id && i.markdown);
 
 const KEY = 'ca.privateMenu.v1';
 export const PRIVATE_MENU_EVENT = 'ca-private-menu-changed';
@@ -21,7 +32,7 @@ export function loadPrivateMenu(): PrivateMenuItem[] {
             typeof i?.week === 'number' &&
             typeof i?.label === 'string' &&
             typeof i?.href === 'string' &&
-            /^https:\/\//.test(i.href),
+            (/^https:\/\//.test(i.href) || typeof i?.markdown === 'string'),
         )
       : [];
   } catch {
