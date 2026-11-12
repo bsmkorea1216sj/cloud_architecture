@@ -15,6 +15,11 @@ import {
   weekSessions,
 } from '@/data/curriculum';
 import { siteTitle } from '@/data/siteConfig';
+import {
+  loadPrivateMenu,
+  PRIVATE_MENU_EVENT,
+  PrivateMenuItem,
+} from '@/utils/privateMenu';
 import { HelpPanelContent } from '../education';
 import '@/styles/app-layout.css';
 
@@ -35,6 +40,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   const { theme, setTheme } = useTheme();
   const [toolsOpen, setToolsOpen] = useState(false);
+  // 이 브라우저에만 저장된 개인 메뉴 (저장소·배포 파일에는 없음)
+  const [privateMenu, setPrivateMenu] = useState<PrivateMenuItem[]>(() => loadPrivateMenu());
+  useEffect(() => {
+    const refresh = () => setPrivateMenu(loadPrivateMenu());
+    window.addEventListener(PRIVATE_MENU_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(PRIVATE_MENU_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
   const [isMobile, setIsMobile] = useState(
     window.innerWidth < MOBILE_BREAKPOINT,
   );
@@ -120,8 +136,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           (session) => session.type !== 'theory',
         );
 
+        const privateLinks = privateMenu
+          .filter((p) => p.week === week.week)
+          .map((p) => ({
+            type: 'link' as const,
+            text: p.label,
+            href: p.href,
+            external: true,
+          }));
+
         // 표시할 차시가 없으면 이 주차는 메뉴에서 제외
-        if (visibleSessions.length === 0) {
+        if (visibleSessions.length === 0 && privateLinks.length === 0) {
           return null;
         }
 
@@ -138,7 +163,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
               text: `${icon} ${week.week}-${session.session}. ${session.title}`,
               href: `/week/${week.week}/session/${session.session}`,
             };
-          }),
+          }).concat(privateLinks as any),
         };
       })
       .filter((item) => item !== null), // null 항목 제거

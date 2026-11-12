@@ -1,4 +1,4 @@
-﻿// 실습 계획서 기반 커리큘럼 데이터
+// 실습 계획서 기반 커리큘럼 데이터
 
 export type SessionType = 'theory' | 'lab' | 'demo' | 'none';
 

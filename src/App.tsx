@@ -18,6 +18,7 @@ import { MidtermExam } from './pages/MidtermExam';
 import { FinalExam } from './pages/FinalExam';
 import { SessionGuide } from './pages/SessionGuide';
 import { WeekOverview } from './pages/WeekOverview';
+import { PrivateMenu } from './pages/PrivateMenu';
 import { standaloneSessions } from './data/curriculum';
 import '@cloudscape-design/global-styles/index.css';
 import './styles/theme.css';
@@ -81,6 +82,7 @@ function AppContent() {
                 element={<Navigate to={path} replace />}
               />
             ))}
+            <Route path="/private-menu" element={<PrivateMenu />} />
             <Route path="/midterm" element={<MidtermExam />} />
             <Route path="/final" element={<FinalExam />} />
           </Routes>
