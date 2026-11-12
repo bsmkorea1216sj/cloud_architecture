@@ -185,7 +185,7 @@ SELECT
   temperature,
   unit
 FROM 'factory/+/telemetry'
-WHERE temperature IS NOT MISSING
+WHERE isUndefined(temperature) = false
 ```
 
 ### Lambda 예시 | 검증·경고 판정·DynamoDB 저장
