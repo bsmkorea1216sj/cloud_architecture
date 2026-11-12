@@ -29,7 +29,7 @@ learningObjectives:
 > - [Colab 실습 노트북 열기](https://colab.research.google.com/drive/1xCX9Q7vPKoxHhVBQYOaAycIGKOKzN_ij)
 > - [VS Code용 시뮬레이션 코드](https://drive.google.com/file/d/1BtHDyrPejMDg6j4hEEuvyW0CvKELIP5s/view?usp=drivesdk)
 > - [VS Code 실습 안내](https://drive.google.com/file/d/1-G1DlGrfVt2JrtVOptBNhlNh0wkHLh92/view?usp=drivesdk)
-> - [20분 시범강의 슬라이드](https://docs.google.com/presentation/d/1Tk8jaJUINiY5REQYKCs8x7N3MAfE6DnLvuKaUrM_Ntk/edit)
+> - [20분 시범강의 슬라이드](https://docs.google.com/presentation/d/1BAPI46iN_Fh0GLJgYk8UdGr-GuYAYxurmbqWT4PviO4/edit)
 
 ## 강의 흐름 | 20분
 
@@ -156,11 +156,10 @@ Route 53 ── DNS 응답
 ```python
 import pandas as pd
 
+# 확인된 B-냉각수 측정값 두 건으로 판정 원리를 보여주는 축약 예시
 events = pd.DataFrame([
-    {"machine_id": "press-01", "time": "09:00", "temperature": 72.0, "unit": "C"},
-    {"machine_id": "coolant-B", "time": "15:00", "temperature": 98.0, "unit": "C"},
-    {"machine_id": "coolant-B", "time": "16:20", "temperature": 102.0, "unit": "C"},
-    {"machine_id": "conveyor-02", "time": "16:20", "temperature": 68.0, "unit": "C"},
+    {"machine_id": "B-냉각수", "temperature": 98.0, "unit": "C"},
+    {"machine_id": "B-냉각수", "temperature": 102.0, "unit": "C"},
 ])
 
 threshold = 90.0
@@ -168,7 +167,7 @@ events["status"] = events["temperature"].ge(threshold).map(
     {True: "ALERT", False: "NORMAL"}
 )
 display(events)
-print("경고 건수:", int(events["status"].eq("ALERT").sum()))
+print("축약 예시 경고 건수:", int(events["status"].eq("ALERT").sum()))
 ```
 
 > 노트북에서는 기존 셀과 데이터가 강의 화면에 표시된 기준 기록과 일치하는지 먼저 확인한 뒤 실행합니다. 위 코드는 핵심 판정 원리를 설명하는 축약 예시입니다.
