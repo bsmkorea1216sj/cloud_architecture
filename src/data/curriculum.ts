@@ -578,6 +578,21 @@ export const curriculum: WeekCurriculum[] = [
         ],
       },
     ],
+      {
+        session: 4,
+        type: 'demo',
+        title: 'ICT 시범강의 | AI Agent 제조 모니터링 웹앱 (AWS)',
+        hasContent: true,
+        markdownPath: '/content/week11/11-4-ict-ai-agent-manufacturing-demo.md',
+        description:
+          '제조 이벤트 워크플로우, AWS 네트워크 아키텍처, Colab 시뮬레이션, Codex·VS Code 연계와 AWS IoT 구현 코드를 연결하는 20분 시범강의',
+        awsServices: ['AWS IoT Core', 'AWS Lambda', 'Amazon DynamoDB', 'Amazon VPC', 'Amazon ECS'],
+        learningObjectives: [
+          '제조 센서 이벤트의 수집·검증·저장·시각화 워크플로우를 설명할 수 있습니다.',
+          '공개·사설 서브넷과 관리형 서비스 경계를 포함한 AWS 아키텍처를 읽을 수 있습니다.',
+          'Colab 시뮬레이션과 Codex·VS Code 개발 흐름을 설명할 수 있습니다.',
+        ],
+      },
     prerequisites: ['Week 1-10 완료'],
     estimatedTime: '180분',
     difficulty: 'advanced',
