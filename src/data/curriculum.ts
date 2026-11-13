@@ -267,7 +267,7 @@ export const curriculum: WeekCurriculum[] = [
       {
         session: 2,
         type: 'lab',
-        title: 'Amazon S3 웹사이트 호스팅',
+        title: 'Amazon S3 웹사이트 호스팅 (26)',
         hasContent: true,
         markdownPath: '/content/week5/5-2-s3-website-hosting.md',
         description:
