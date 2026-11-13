@@ -1,5 +1,5 @@
 ---
-title: 'S3 웹사이트 호스팅'
+title: 'Amazon S3 웹사이트 호스팅 (26)'
 week: 5
 session: 2
 awsServices:
@@ -27,50 +27,27 @@ learningObjectives:
 
 ## 태스크 1: Amazon S3 버킷 생성
 
-### 1.1 리전 선택
+### 1.1 서울 리전에서 버킷 생성 화면 열기
 
-1. AWS Management Console에 로그인한 후 콘솔 오른쪽 상단에서 리전을 **Asia Pacific (Seoul) ap-northeast-2**로 선택합니다.
+1. 실습용 AWS 계정에 로그인하고 리전을 **아시아 태평양(서울) `ap-northeast-2`**로 선택합니다.
+2. **Amazon S3 → 범용 버킷(General purpose buckets) → 버킷 만들기(Create bucket)**로 이동합니다. [서울 리전 버킷 만들기 화면](https://ap-northeast-2.console.aws.amazon.com/s3/bucket/create?region=ap-northeast-2)
+3. **일반 구성(General configuration)**에서 서울 리전을 확인합니다. **버킷 유형(Bucket type)**이 표시되면 **범용(General purpose)**을 선택합니다.
 
-### 1.2 Amazon S3 서비스 접속 및 버킷 생성
+### 1.2 버킷 이름과 접근 설정
 
-2. 상단 검색창에 `S3`를 검색하고 **S3**를 선택합니다.
+4. **버킷 네임스페이스(Bucket namespace)**가 표시되면 **글로벌 네임스페이스(Global namespace)**를 선택합니다. **버킷 이름(Bucket name)**에 `cloudarchitect-lab-s3website-<실습코드>`를 입력합니다. 예시는 `cloudarchitect-lab-s3website-lab7k3`입니다. 소문자, 숫자, 하이픈으로 이름을 만들고 이미 사용 중이면 접미사를 바꿉니다.
+5. **기존 버킷에서 설정 복사(Copy settings from existing bucket)**는 건너뜁니다.
+6. **객체 소유권(Object Ownership)**은 **ACL 비활성화(ACLs disabled)**를 유지합니다. 버킷 정책으로 웹사이트 읽기 권한을 설정하는 실습입니다.
+7. **이 버킷의 퍼블릭 액세스 차단 설정(Block Public Access settings for this bucket)**은 **모든 퍼블릭 액세스 차단(Block all public access)**을 켠 채 생성합니다. 공개 읽기는 태스크 4에서 웹사이트 실습 버킷에 한해 설정합니다.
 
-3. S3 대시보드에서 [[Create bucket]] 버튼을 클릭합니다.
+### 1.3 버전 관리, 태그 및 암호화 확인
 
-4. **General configuration** 섹션에서 **AWS Region**이 **Asia Pacific (Seoul) ap-northeast-2**로 설정되어 있는지 확인합니다.
+8. **버킷 버전 관리(Bucket Versioning)**는 **비활성화(Disable)**를 유지합니다.
+9. **태그(Tags)**는 선택 항목입니다. 버킷을 구분하려면 **태그 추가(Add tag)**에서 키 `Name`, 값 `CloudArchitect-Lab-S3Website`를 입력합니다.
+10. **기본 암호화(Default encryption)**는 **Amazon S3 관리형 키를 사용한 서버 측 암호화(SSE-S3)**를 유지합니다. **고급 설정(Advanced settings)**의 **객체 잠금(Object Lock)**은 비활성화 상태를 유지합니다.
+11. [[Create bucket]]을 클릭합니다. 범용 버킷 목록에서 새 버킷 이름과 서울 리전을 확인한 후 태스크 2로 진행합니다.
 
-5. **Bucket name**에 `cloudarchitect-lab-s3website-[학번]`을 입력합니다.
-
-> [!TIP]
-> S3 버킷 이름은 전 세계적으로 고유해야 합니다. [학번] 부분을 본인의 학번으로 대체합니다. 예: `cloudarchitect-lab-s3website-20241234`
-
-### 1.3 퍼블릭 액세스 설정
-
-6. **Block Public Access settings for this bucket** 섹션에서 **Block all public access** 체크박스를 해제합니다.
-
-7. 경고 메시지가 나타나면 **I acknowledge that the current settings might result in this bucket and the objects within becoming public** 체크박스를 체크합니다.
-
-> [!WARNING]
-> 웹사이트 호스팅을 위해 퍼블릭 액세스를 허용합니다. 민감한 데이터는 절대 이 버킷에 업로드하지 않습니다.
-
-### 1.4 태그 설정
-
-8. 페이지를 아래로 스크롤하여 **Tags - optional** 섹션을 찾습니다.
-
-9. [[Add tag]] 버튼을 클릭하고 첫 번째 태그를 입력합니다:
-- **Key**: `Name`
-- **Value**: `CloudArchitect-Lab-S3Website`
-
-10. [[Add tag]] 버튼을 다시 클릭하고 두 번째 태그를 추가합니다:
-- **Key**: `StudentId`
-- **Value**: `[본인 학번]` (예: 20241234)
-
-> [!TIP]
-> StudentId 태그를 추가하면 공유 AWS 계정에서 본인의 S3 버킷을 쉽게 구분하고, Tag Editor로 본인 학번으로 검색하여 모든 실습 리소스를 한 번에 확인할 수 있습니다.
-
-11. 다른 설정은 기본값으로 유지하고 [[Create bucket]] 버튼을 클릭합니다.
-
-✅ **태스크 완료**: S3 버킷이 생성되었습니다.
+[AWS 공식 안내 · 범용 버킷 생성](https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html)
 
 
 ## 태스크 2: 정적 웹사이트 파일 생성 및 업로드
@@ -112,7 +89,7 @@ learningObjectives:
             <section class="intro">
                 <h2>실습 완료!</h2>
                 <p>이 웹사이트는 Amazon S3에서 호스팅되고 있습니다.</p>
-                <p><strong>학생 이름:</strong> [여기에 본인 이름 입력]</p>
+                <p><strong>실습 별칭:</strong> [여기에 실습 별칭 입력]</p>
                 <p><strong>실습 날짜:</strong> <span id="current-date"></span></p>
             </section>
             <section class="features">
@@ -138,10 +115,10 @@ learningObjectives:
 
 14. 파일을 `index.html` 이름으로 **바탕화면**에 저장합니다.
 
-15. `index.html` 파일에서 `[여기에 본인 이름 입력]` 부분을 본인의 이름으로 수정하고 저장합니다.
+15. `index.html` 파일에서 `[여기에 실습 별칭 입력]` 부분을 실습 별칭으로 수정하고 저장합니다. 공개 페이지에는 실제 이름이나 학번을 넣지 않습니다.
 
 > [!TIP]
-> 예: `<p><strong>학생 이름:</strong> 홍길동</p>`
+> 예: `<p><strong>실습 별칭:</strong> 실습 참가자 A</p>`
 
 ### 2.1.2 CSS 파일 생성
 
@@ -235,7 +212,11 @@ footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1p
 
 33. 버킷 상세 페이지 상단의 탭 메뉴에서 **Permissions** 탭을 선택합니다.
 
-34. **Bucket policy** 섹션에서 [[Edit]] 버튼을 클릭합니다.
+34. **Block public access (bucket settings)** → [[Edit]]에서 상위 체크박스를 해제하여 개별 설정을 편집합니다. ACL 관련 차단 두 항목은 **켜고**, 공개 버킷 정책 관련 차단 두 항목만 **끕니다**. 저장할 때 확인 창이 나타나면 화면 안내를 따릅니다. 이 설정은 실습 버킷에만 적용합니다.
+
+    계정이나 조직 정책에서 공개 접근을 차단하면 버킷 설정만으로는 공개할 수 없습니다. 관리자가 허용한 실습 환경에서 진행하세요. [AWS 공식 안내 · 퍼블릭 액세스 차단](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)
+
+    이어서 **Bucket policy** 섹션에서 [[Edit]] 버튼을 클릭합니다.
 
 35. 다음 정책을 입력합니다 (`YOUR-BUCKET-NAME`을 본인의 버킷 이름으로 변경):
 
@@ -254,13 +235,13 @@ footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1p
 }
 ```
 
-36. `YOUR-BUCKET-NAME` 부분을 본인의 실제 버킷 이름(예: `cloudarchitect-lab-s3website-20241234`)으로 변경합니다.
+36. `YOUR-BUCKET-NAME` 부분을 본인의 실제 버킷 이름(예: `cloudarchitect-lab-s3website-lab7k3`)으로 변경합니다.
 
 37. [[Save changes]] 버튼을 클릭합니다.
 
 > [!TROUBLESHOOTING]
 > "Access Denied" 오류가 발생하면:
-> - **Block Public Access** 설정이 해제되어 있는지 **Permissions** 탭에서 확인합니다
+> - **Permissions**에서 공개 버킷 정책 관련 차단 두 항목과 상위 계정·조직 설정을 확인합니다
 > - 버킷 이름이 정확한지 확인합니다 (대소문자 구분)
 
 ✅ **태스크 완료**: 버킷 정책이 설정되어 웹사이트 파일에 퍼블릭 접근이 가능합니다.
@@ -339,7 +320,7 @@ footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1p
 
 1. 상단 검색창에서 `S3`를 검색하고 **S3**를 선택합니다.
 
-2. 실습에서 생성한 버킷(`cloudarchitect-lab-s3website-[학번]`)을 선택합니다.
+2. 실습에서 생성한 버킷(`cloudarchitect-lab-s3website-<실습코드>`)을 선택합니다.
 
 3. 버킷 내 모든 객체를 먼저 삭제합니다:
    - [[Empty]] 버튼 클릭
@@ -374,7 +355,7 @@ S3는 파일을 객체로 저장하며, 각 객체는 고유한 키(경로)를 �
 
 🌍
 퍼블릭 액세스 설정
-기본적으로 차단된 퍼블릭 액세스를 해제하고 버킷 정책으로 읽기 권한을 부여해야 웹사이트가 작동합니다
+실습 버킷에서 공개 버킷 정책 관련 차단 두 항목을 해제하고 버킷 정책으로 읽기 권한을 부여합니다
 
 🔗
 웹사이트 엔드포인트
