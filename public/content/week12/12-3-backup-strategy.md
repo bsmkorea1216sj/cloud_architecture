@@ -614,6 +614,12 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 
 ✅ **리소스 정리 완료**: 모든 리소스가 삭제되었습니다.
 
+## 다음 단계 · 실습 후 코랩 퀴즈
+
+[▶ Google Colab에서 12-3 백업·복원 상황 퀴즈 시작하기](https://colab.research.google.com/github/bsmkorea1216sj/cloud_architecture/blob/main/public/files/week12/12-3-backup-quiz.ipynb)
+
+콘솔에서 기록한 백업·복원 결과를 준비하고, 코랩에 사본을 저장한 뒤 첫 번째 셀부터 실행하세요.
+
 
 ## 💡 핵심 포인트 정리
 
