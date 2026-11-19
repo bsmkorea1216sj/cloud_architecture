@@ -620,7 +620,7 @@ export const curriculum: WeekCurriculum[] = [
       {
         session: 3,
         type: 'lab',
-        title: '기본 백업 전략 구성',
+        title: '기본 백업 전략 구성 (26)',
         hasContent: true,
         markdownPath: '/content/week12/12-3-backup-strategy.md',
         description:
