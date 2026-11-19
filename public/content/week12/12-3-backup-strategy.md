@@ -30,12 +30,13 @@ learningObjectives:
 >   - EC2 인스턴스 (백업 대상, 웹 서버 및 샘플 데이터 포함)
 >   - IAM 백업 역할 (AWS Backup 서비스 권한)
 >   - 백업용 태그 (Project=CloudArchitect, Week=Week12-3)
-> - **실행 시간**: 약 3-5분
+> - **실행 시간**: 약 5-8분
 > - **활용**: 태스크 2-6에서 백업 볼트를 생성하고, 백업 계획을 설정하며, 태그 기반으로 EC2를 백업하고 복원합니다
 >
 > **cleanup-12-3.sh** - 리소스 정리 스크립트
-> - **목적**: 실습에서 생성한 모든 리소스를 안전한 순서로 자동 삭제
-> - **삭제 리소스**: 백업 복구 포인트, 백업 계획, 백업 볼트, EC2 인스턴스, IAM 역할, VPC 및 네트워크 리소스
+> - **목적**: 사전 구축 스크립트로 만든 리소스와 VPC 안의 EC2를 안전한 순서로 자동 삭제
+> - **삭제 리소스**: EC2 인스턴스(원본과 태스크 5에서 복원한 인스턴스 모두), IAM 역할, VPC 및 네트워크 리소스
+> - **삭제하지 않는 리소스**: AWS Backup의 복구 시점, 백업 계획, 백업 볼트 → 리소스 정리 단계에서 콘솔로 직접 삭제합니다
 > - **실행 시간**: 약 3-5분
 >
 > **사용 태스크:**
@@ -102,7 +103,7 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 6. 스크립트 실행 중 생성 계획이 표시되면 내용을 확인하고 `y`를 입력하여 진행합니다.
 
 > [!NOTE]
-> 사전 환경 구축에 약 3-5분이 소요됩니다. 스크립트가 완료될 때까지 기다립니다.
+> 사전 환경 구축에 약 5-8분이 소요됩니다. 스크립트가 완료될 때까지 기다립니다.
 
 ### 0.3 생성된 리소스 확인
 
@@ -119,7 +120,7 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 
 8. 출력 메시지에서 EC2 인스턴스의 **Public IP 주소**를 확인하고 메모합니다.
 
-9. 웹 브라우저에서 `http://[Public IP]`로 접속하여 백업 테스트용 웹 페이지가 표시되는지 확인합니다.
+9. 출력 메시지의 웹 페이지 주소(`http://[Public IP]`)를 함께 메모합니다. 접속 확인은 태스크 1.2에서 합니다.
 
 ✅ **태스크 완료**: 사전 환경 구축이 완료되었습니다.
 
@@ -142,6 +143,7 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 12. `CloudArchitect-Lab-TestInstance` 인스턴스의 상태가 "Running"인지 확인합니다.
 
 13. 인스턴스를 선택하고 하단 **Details** 탭에서 다음 정보를 메모장에 복사합니다 (태스크 5 복원 시 필요):
+- **Instance ID**: `i-`로 시작하는 값 (복원 후 원본과 복원 인스턴스를 구분할 때 사용)
 - **Public IPv4 address**: 웹 서버 접속 확인용
 - **VPC ID**: `vpc-` 로 시작하는 값
 - **Subnet ID**: `subnet-` 으로 시작하는 값
@@ -350,7 +352,7 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 52. 백업 작업 상태가 "Completed"로 변경될 때까지 기다립니다. 페이지 우측 상단의 새로고침 아이콘(🔄)을 주기적으로 클릭하여 상태를 확인합니다.
 
 > [!IMPORTANT]
-> EC2 인스턴스 백업에 약 10-15분이 소요됩니다. **Status**가 "Completed"로 변경되어야 태스크 5의 복원을 진행할 수 있습니다. 대기하는 동안 태스크 5의 내용을 미리 읽어봅니다.
+> EC2 인스턴스 백업에 약 5-15분이 소요됩니다. **Status**가 "Completed"로 변경되어야 태스크 5의 복원을 진행할 수 있습니다. 대기하는 동안 태스크 5의 내용을 미리 읽어봅니다.
 
 > [!TROUBLESHOOTING]
 > 백업 작업이 "Failed" 상태인 경우:
@@ -392,13 +394,18 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 
 58. **Restore role** 섹션에서 **Choose an IAM role**을 선택한 후 `CloudArchitect-Lab-BackupRole`을 선택합니다.
 
-59. 나머지 설정은 기본값을 유지하고 [[Restore backup]] 버튼을 클릭합니다.
+59. **Protected resource tags** 섹션에서 **Copy tags from the protected resource to the restored resource**가 선택되어 있는지 확인합니다(기본값).
+
+> [!NOTE]
+> 이 옵션이 켜져 있으면 복원된 인스턴스도 원본의 태그(`Name=CloudArchitect-Lab-TestInstance`, `Project`, `Week`, `Purpose`)를 그대로 받습니다. 그래서 EC2 목록에서 이름이 같은 인스턴스가 두 대 보이며, **Instance ID**와 **Launch time**으로 구분합니다. 같은 태그 때문에 복원된 인스턴스도 일일 백업 계획의 대상에 포함됩니다.
+
+60. 나머지 설정은 기본값을 유지하고 [[Restore backup]] 버튼을 클릭합니다.
 
 ### 5.3 복원 작업 모니터링
 
-60. 복원이 시작되면 왼쪽 메뉴에서 **My account** 섹션 아래의 **Jobs**를 선택합니다.
+61. 복원이 시작되면 왼쪽 메뉴에서 **My account** 섹션 아래의 **Jobs**를 선택합니다.
 
-61. **Restore jobs** 탭을 선택하여 복원 작업의 진행 상태를 확인합니다.
+62. **Restore jobs** 탭을 선택하여 복원 작업의 진행 상태를 확인합니다.
 
 > [!OUTPUT]
 > ```
@@ -415,20 +422,20 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 
 ### 5.4 복원된 인스턴스 확인
 
-62. 복원 작업 상태가 "Completed"로 변경되면, 상단 검색창에서 `EC2`를 검색하고 **EC2**를 선택합니다.
+63. 복원 작업 상태가 "Completed"로 변경되면, 상단 검색창에서 `EC2`를 검색하고 **EC2**를 선택합니다.
 
-63. 왼쪽 메뉴에서 **Instances** 섹션 아래의 **Instances**를 선택합니다.
+64. 왼쪽 메뉴에서 **Instances** 섹션 아래의 **Instances**를 선택합니다.
 
 > [!OUTPUT]
 > ```
-> EC2 인스턴스 목록에서 다음과 같이 두 개의 인스턴스가 표시됩니다:
+> EC2 인스턴스 목록에 이름이 같은 인스턴스가 두 대 표시됩니다(복원 시 태그가 복사됨):
 >
-> Name                              | Instance state | Instance type
-> CloudArchitect-Lab-TestInstance   | Running        | t3.micro
-> (복원된 인스턴스 - 이름 없음)       | Running        | t3.micro
+> Name                              | Instance ID         | Instance state | Launch time
+> CloudArchitect-Lab-TestInstance   | i-0aaa…(원본)       | Running        | 실습 시작 시각
+> CloudArchitect-Lab-TestInstance   | i-0bbb…(복원)       | Running        | 방금 전(복원 시각)
 > ```
 
-64. 복원된 인스턴스 (이름이 없는 인스턴스)를 선택하고 하단 **Details** 탭에서 **Public IPv4 address**를 복사합니다.
+65. 태스크 1에서 메모한 원본 **Instance ID**와 **다른** 인스턴스(**Launch time**이 더 최근인 인스턴스)가 복원된 인스턴스입니다. 이 인스턴스를 선택하고 하단 **Details** 탭에서 **Public IPv4 address**를 복사합니다.
 
 > [!TROUBLESHOOTING]
 > 복원된 인스턴스에 Public IP가 없는 경우:
@@ -436,9 +443,9 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 > - 인스턴스를 선택하고 **Actions** > **Networking** > **Manage IP addresses**에서 퍼블릭 IP 자동 할당을 확인합니다
 > - 퍼블릭 IP가 할당되지 않은 경우, **Actions** > **Networking** > **Allocate Elastic IP address**로 탄력적 IP를 할당할 수 있습니다
 
-65. 새 브라우저 탭에서 `http://[복원된 인스턴스 IP]`로 접속합니다.
+66. 새 브라우저 탭에서 `http://[복원된 인스턴스 IP]`로 접속합니다.
 
-66. 원본 인스턴스와 동일한 웹 페이지가 표시되는지 확인합니다.
+67. 원본 인스턴스와 동일한 웹 페이지가 표시되는지 확인합니다.
 
 > [!TIP]
 > 원본 인스턴스(`http://[원본 IP]`)와 복원된 인스턴스(`http://[복원 IP]`)를 나란히 열어 동일한 콘텐츠가 표시되는지 비교해보세요. 백업 시점의 데이터가 정확히 복원되었음을 확인할 수 있습니다.
@@ -451,17 +458,17 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 > [!NOTE]
 > AWS Backup 대시보드는 백업/복원 작업의 전체 현황을 한눈에 파악할 수 있는 모니터링 화면입니다. 프로덕션 환경에서는 이 대시보드를 주기적으로 확인하여 백업 실패 여부를 모니터링합니다.
 
-67. 상단 검색창에서 `AWS Backup`을 검색하고 **AWS Backup**을 선택합니다.
+68. 상단 검색창에서 `AWS Backup`을 검색하고 **AWS Backup**을 선택합니다.
 
-68. AWS Backup 콘솔의 왼쪽 메뉴에서 **Dashboard**를 선택합니다.
+69. AWS Backup 콘솔의 왼쪽 메뉴에서 **Dashboard**를 선택합니다.
 
 ### 6.1 백업 작업 현황 확인
 
-69. **Backup jobs summary** 섹션에서 다음 항목을 확인합니다:
+70. **Backup jobs summary** 섹션에서 다음 항목을 확인합니다:
 - **Completed**: 성공적으로 완료된 백업 작업 수 (최소 1개 이상)
 - **Failed**: 실패한 백업 작업 수 (0이어야 정상)
 
-70. **Restore jobs summary** 섹션에서 복원 작업 현황을 확인합니다:
+71. **Restore jobs summary** 섹션에서 복원 작업 현황을 확인합니다:
 - **Completed**: 성공적으로 완료된 복원 작업 수 (최소 1개 이상)
 
 > [!OUTPUT]
@@ -478,11 +485,11 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 
 ### 6.2 보호된 리소스 확인
 
-71. 왼쪽 메뉴에서 **My account** 섹션 아래의 **Protected resources**를 선택합니다.
+72. 왼쪽 메뉴에서 **My account** 섹션 아래의 **Protected resources**를 선택합니다.
 
-72. `CloudArchitect-Lab-TestInstance`가 보호된 리소스 목록에 표시되는지 확인합니다.
+73. `CloudArchitect-Lab-TestInstance`가 보호된 리소스 목록에 표시되는지 확인합니다.
 
-73. 해당 리소스를 선택하여 **Recovery points** 섹션에서 생성된 복구 시점의 **Status**가 "Available"인지 확인합니다.
+74. 해당 리소스를 선택하여 **Recovery points** 섹션에서 생성된 복구 시점의 **Status**가 "Completed"인지 확인합니다.
 
 > [!TIP]
 > 프로덕션 환경에서는 AWS Backup 대시보드와 함께 다음과 같은 모니터링을 설정합니다:
@@ -514,18 +521,17 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 3. 삭제 확인 메시지가 표시되면 `y`를 입력하여 진행합니다.
 
 4. 스크립트가 다음 리소스를 자동으로 삭제합니다:
-   - EC2 인스턴스 (`CloudArchitect-Lab-TestInstance`)
+   - EC2 인스턴스: `CloudArchitect-Lab-VPC` 안의 인스턴스 전체(원본과 태스크 5에서 복원한 인스턴스 모두)
    - IAM 역할 (`CloudArchitect-Lab-BackupRole`)
    - Security Group, VPC 및 관련 리소스
 
 > [!IMPORTANT]
-> 정리 스크립트는 사전 구축 스크립트로 생성한 리소스만 삭제합니다. 다음 리소스는 **수동으로 삭제**해야 합니다:
-> - **복원된 EC2 인스턴스**: 태스크 5에서 복원한 인스턴스 (이름 없음)
-> - **AWS Backup 리소스**: 백업 볼트, 백업 계획, 복구 시점
+> 정리 스크립트는 **AWS Backup 리소스를 삭제하지 않습니다**. 다음 리소스는 아래 방법 2의 태스크 1~3 순서로 **수동 삭제**합니다:
+> - **AWS Backup 리소스**: 복구 시점 → 백업 계획 → 백업 볼트
 >
-> 아래 수동 삭제 단계를 반드시 확인하세요.
+> 복원된 인스턴스는 원본과 같은 VPC에 있으므로 스크립트가 함께 종료합니다. 스크립트 실행 후 EC2 목록에서 두 인스턴스가 모두 "Terminated"인지 확인합니다.
 
-### 방법 2: 수동 삭제 (스크립트 실행이 불가능한 경우)
+### 방법 2: 콘솔에서 수동 삭제 (AWS Backup 리소스는 방법 1을 썼어도 태스크 1~3 필수)
 
 > [!IMPORTANT]
 > AWS Backup 리소스는 복구 시점 → 백업 계획 → 백업 볼트 순서로 삭제해야 합니다.
@@ -576,12 +582,12 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 
 16. 왼쪽 메뉴에서 **Instances**를 선택합니다.
 
-17. 다음 인스턴스를 모두 선택합니다:
-- `CloudArchitect-Lab-TestInstance` (원본 인스턴스)
-- 이름이 없는 인스턴스 (태스크 5에서 복원한 인스턴스)
+17. 이름이 `CloudArchitect-Lab-TestInstance`인 인스턴스 **두 대를 모두** 선택합니다:
+- 원본 인스턴스 (태스크 1에서 메모한 Instance ID)
+- 태스크 5에서 복원한 인스턴스 (원본과 Instance ID가 다르고 Launch time이 더 최근)
 
 > [!IMPORTANT]
-> 복원된 인스턴스는 이름이 지정되어 있지 않으므로, Instance type이 `t3.micro`이고 최근에 생성된 인스턴스를 확인합니다. **Launch time** 열을 확인하여 복원 시점과 일치하는 인스턴스를 선택합니다.
+> 복원할 때 원본 태그가 복사되어 두 인스턴스의 이름이 같습니다. 검색창에 `CloudArchitect-Lab-TestInstance`를 입력해 두 대가 모두 선택되었는지 확인합니다.
 
 18. **Instance state** > **Terminate instance**를 선택합니다.
 
@@ -606,7 +612,7 @@ chmod +x setup-12-3.sh cleanup-12-3.sh
 26. 다음과 같이 검색 조건을 설정합니다:
    - **Regions**: `Asia Pacific (Seoul) ap-northeast-2`
    - **Resource types**: `All supported resource types`
-   - **Tags**: Tag key에 `Name`을 선택하고, Tag value에 `CloudArchitect-Lab`을 입력합니다.
+   - **Tags**: Tag key에 `Week`를 선택하고, Tag value에 `Week12-3`을 입력합니다. (사전 구축 스크립트가 모든 리소스에 붙인 태그입니다. `Name` 값은 `CloudArchitect-Lab-VPC`처럼 리소스마다 달라 정확히 일치하는 값으로는 찾을 수 없습니다.)
 
 27. [[Search resources]]를 클릭합니다.
 
