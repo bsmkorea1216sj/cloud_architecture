@@ -55,9 +55,35 @@ main{height:100%;overflow-y:auto;padding:26px clamp(18px,4vw,54px) 65px;max-widt
 .reader-head strong{color:#294e91}
 @media(max-width:950px){.layout{height:calc(100vh - 66px);display:block}main{height:100%;overflow-y:auto;padding:16px 16px 55px}aside{height:calc(100vh - 66px);top:66px}.hero{padding:24px 20px}}
 @media print{.layout{height:auto}main{height:auto;overflow:visible}.lesson{display:block!important}}
+
+/* Persistent split view on desktop, tablet and phone. No overlay navigation. */
+html,body{width:100%;overflow-x:hidden}
+.layout{display:grid!important;grid-template-columns:clamp(210px,25vw,325px) minmax(0,1fr)!important;width:100%;height:calc(100dvh - 66px);min-height:0}
+.layout>aside{display:block!important;position:relative!important;top:auto!important;left:auto!important;bottom:auto!important;width:auto!important;height:100%!important;min-width:0;box-shadow:none!important;z-index:auto!important;overflow-y:auto}
+.layout>main{min-width:0!important;width:100%!important;max-width:none;height:100%;overflow-y:auto}
+.mobile-menu{display:none!important}
+@media(max-width:950px){
+ .layout{display:grid!important;grid-template-columns:235px minmax(0,1fr)!important;height:calc(100dvh - 66px)}
+ .layout>aside{display:block!important;position:relative!important;top:auto!important;height:100%!important;padding:13px 8px}
+ .layout>main{height:100%!important;min-width:0;padding:16px 12px 55px}
+ .navbtn{padding:9px 6px;gap:6px}.topic-list{margin-left:31px}
+}
+@media(max-width:520px){
+ .layout{grid-template-columns:140px minmax(0,1fr)!important}
+ .layout>aside{padding:9px 5px}
+ .layout>main{padding:12px 8px 32px}
+ .toc-head{font-size:13px;padding:5px}.toc-help,.side-title,.topic-list,.layout aside .detail{display:none!important}
+ .navbtn{gap:4px;padding:7px 3px;margin:2px 0}
+ .num{width:20px;height:20px;font-size:10px;flex-shrink:0}
+ .toc-label b{font-size:11px;line-height:1.35;overflow-wrap:anywhere}
+ .toc-label small{font-size:9px;line-height:1.3;overflow-wrap:anywhere}
+ .panel{padding:13px 10px}.panel h2{font-size:17px}
+ .hero{padding:15px 11px}.hero h1{font-size:20px}
+ .reader-head{flex-wrap:wrap;font-size:10px}
+}
 </style></head>
 <body>
-<header class="top"><button class="mobile-menu" onclick="document.querySelector('aside').classList.toggle('show')" aria-label="목차 열기">☰</button><a class="brand" href="#overview">BSM AI EDU<small>빅데이터김교수 · 실습 가이드북</small></a><div class="top-right"><span class="tag">4시간 · 26장 PPT 연동</span><a class="secondary" style="padding:7px 12px;font-size:12px" href="https://github.com/bsmkorea1216sj/AIEdu/tree/main/cafe24-ai-shopping" target="_blank" rel="noopener">GitHub 교재 ↗</a></div></header>
+<header class="top"><a class="brand" href="#overview">BSM AI EDU<small>빅데이터김교수 · 실습 가이드북</small></a><div class="top-right"><span class="tag">4시간 · 26장 PPT 연동</span><a class="secondary" style="padding:7px 12px;font-size:12px" href="https://github.com/bsmkorea1216sj/AIEdu/tree/main/cafe24-ai-shopping" target="_blank" rel="noopener">GitHub 교재 ↗</a></div></header>
 <div class="layout"><aside><div class="side-title">GITHUB MARKDOWN</div><h2 class="toc-head">실습 교재 목차</h2><p class="toc-help">왼쪽 MD 문서를 선택하면 오른쪽에 해당 강의 내용이 표시됩니다.</p><nav id="nav"></nav><div class="detail" style="font-size:12px;margin-top:25px">🔒 모든 상품 등록 실습은 <b>DRY_RUN</b> 모의 실행부터 시작합니다. 실제 운영몰은 승인 없이 변경하지 않습니다.</div></aside><main><div class="reader-head"><span>카페24 AI 쇼핑몰 자동화 / <strong id="current-chapter">전체 교육 안내</strong></span><span>실습 교재 v1.1</span></div>
 <section class="hero"><div class="eyebrow">HANDS-ON COURSE · 2026</div><h1>AI로 만드는 나만의 쇼핑몰<br>구축 · 분류 · 자동 등록 실습</h1><p>ChatGPT Codex로 개발하고, GitHub에서 버전을 관리하며, GCP에서 실행하고, Cafe24 상품 등록까지 연결하는 전체 워크플로우를 시각적으로 학습합니다.</p><div class="hero-tags"><span>ChatGPT Codex</span><span>GitHub</span><span>Google Cloud</span><span>Cafe24</span><span>초보자 대상</span></div></section>
 <div class="stats"><div class="stat"><strong>26장</strong><span>PPT 연계</span></div><div class="stat"><strong>6단계</strong><span>핵심 실습</span></div><div class="stat"><strong>4시간</strong><span>기본 교육</span></div></div>
