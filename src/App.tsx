@@ -12,6 +12,7 @@ import { ProgressProvider } from './contexts/ProgressContext';
 import { AppLayout } from './components/layout/AppLayout';
 import { Footer } from './components/layout/Footer';
 import { Home } from './pages/Home';
+import { Cafe24Guide } from './pages/Cafe24Guide';
 import { Dashboard } from './pages/Dashboard';
 import { EnvironmentSetup } from './pages/EnvironmentSetup';
 import { MidtermExam } from './pages/MidtermExam';
@@ -49,6 +50,11 @@ function AppContent() {
   const handleNavigate = (href: string) => {
     navigate(href);
   };
+
+  // Cafe24 uses its own permanently visible two-column guide, never AppLayout's hamburger drawer.
+  if (location.pathname === '/cafe24' || location.pathname === '/cafe24/') {
+    return <Cafe24Guide />;
+  }
 
   // 홈 페이지는 AppLayout 없이 렌더링
   if (location.pathname === '/') {
