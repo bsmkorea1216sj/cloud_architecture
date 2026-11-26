@@ -34,10 +34,31 @@ ul{padding-left:22px}li{margin:8px 0}table{width:100%;border-collapse:collapse;d
 @media(max-width:950px){.layout{grid-template-columns:1fr}aside{display:none;position:static;height:auto}aside.show{display:block;position:fixed;top:66px;bottom:0;left:0;width:285px;height:auto;box-shadow:10px 0 25px #0002;z-index:15}main{padding:20px 16px 55px}.top{padding:0 15px}.mobile-menu{display:block;border:0;background:#eef3fb;padding:7px 11px;border-radius:8px}.top-right .tag{display:none}.steps,.diagram{grid-template-columns:repeat(2,1fr)}.node:after{display:none}.panel{padding:20px}.hero{padding:28px 23px}}
 @media(max-width:520px){.stats{grid-template-columns:1fr 1fr 1fr;gap:7px}.stat{padding:12px}.stat strong{font-size:17px}.stat span{font-size:10px}.steps,.diagram{grid-template-columns:1fr}.hero h1{font-size:27px}.top .brand{font-size:15px}}
 @media print{aside,.top,.actions,.copy{display:none!important}.layout{display:block}main{max-width:none}.lesson{display:block!important}.panel{break-inside:avoid}}
+
+/* Two-pane course manual: left Markdown table of contents, right reader */
+.layout{grid-template-columns:325px minmax(0,1fr);height:calc(100vh - 66px);min-height:0;max-width:none}
+aside{top:0;height:100%;overflow-y:auto;padding:23px 15px;background:#fff;border-right:1px solid #dbe3ee}
+main{height:100%;overflow-y:auto;padding:26px clamp(18px,4vw,54px) 65px;max-width:none;scroll-behavior:smooth}
+.lesson{display:none}.lesson.active{display:block}
+.hero{margin-bottom:18px;padding:26px 30px}.hero h1{font-size:clamp(23px,2.6vw,31px)}
+.stats{margin:13px 0}.panel{margin:13px 0 20px}
+.side-title{padding:10px 13px 5px}
+.toc-head{font-size:16px;font-weight:850;color:#1e3153;margin:0;padding:5px 12px}
+.toc-help{color:#7a879c;font-size:12px;padding:0 12px 14px;margin:0}
+.navbtn{align-items:flex-start;padding:11px 10px;margin:3px 0;border:1px solid transparent}
+.navbtn.active{border-color:#c6d9fc}
+.toc-label{display:block;min-width:0}.toc-label b{display:block;font-size:13px}.toc-label small{display:block;font-size:11px;color:#8390a3;line-height:1.5;font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere;margin-top:2px}
+.navbtn.active .toc-label small{color:#557fbf}
+.topic-list{list-style:none;margin:5px 0 8px 42px;padding:0;border-left:1px solid #e0e8f2}
+.topic-list li{font-size:11px!important;margin:0;padding:3px 10px;color:#7b899e;line-height:1.6!important}
+.reader-head{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:4px 0 15px;color:#64748b;font-size:12px}
+.reader-head strong{color:#294e91}
+@media(max-width:950px){.layout{height:calc(100vh - 66px);display:block}main{height:100%;overflow-y:auto;padding:16px 16px 55px}aside{height:calc(100vh - 66px);top:66px}.hero{padding:24px 20px}}
+@media print{.layout{height:auto}main{height:auto;overflow:visible}.lesson{display:block!important}}
 </style></head>
 <body>
 <header class="top"><button class="mobile-menu" onclick="document.querySelector('aside').classList.toggle('show')" aria-label="목차 열기">☰</button><a class="brand" href="#overview">BSM AI EDU<small>빅데이터김교수 · 실습 가이드북</small></a><div class="top-right"><span class="tag">4시간 · 26장 PPT 연동</span><a class="secondary" style="padding:7px 12px;font-size:12px" href="https://github.com/bsmkorea1216sj/AIEdu/tree/main/cafe24-ai-shopping" target="_blank" rel="noopener">GitHub 교재 ↗</a></div></header>
-<div class="layout"><aside><div class="side-title">COURSE NAVIGATION</div><nav id="nav"></nav><div class="detail" style="font-size:12px;margin-top:25px">🔒 모든 상품 등록 실습은 <b>DRY_RUN</b> 모의 실행부터 시작합니다. 실제 운영몰은 승인 없이 변경하지 않습니다.</div></aside><main>
+<div class="layout"><aside><div class="side-title">GITHUB MARKDOWN</div><h2 class="toc-head">실습 교재 목차</h2><p class="toc-help">왼쪽 MD 문서를 선택하면 오른쪽에 해당 강의 내용이 표시됩니다.</p><nav id="nav"></nav><div class="detail" style="font-size:12px;margin-top:25px">🔒 모든 상품 등록 실습은 <b>DRY_RUN</b> 모의 실행부터 시작합니다. 실제 운영몰은 승인 없이 변경하지 않습니다.</div></aside><main><div class="reader-head"><span>카페24 AI 쇼핑몰 자동화 / <strong id="current-chapter">전체 교육 안내</strong></span><span>실습 교재 v1.1</span></div>
 <section class="hero"><div class="eyebrow">HANDS-ON COURSE · 2026</div><h1>AI로 만드는 나만의 쇼핑몰<br>구축 · 분류 · 자동 등록 실습</h1><p>ChatGPT Codex로 개발하고, GitHub에서 버전을 관리하며, GCP에서 실행하고, Cafe24 상품 등록까지 연결하는 전체 워크플로우를 시각적으로 학습합니다.</p><div class="hero-tags"><span>ChatGPT Codex</span><span>GitHub</span><span>Google Cloud</span><span>Cafe24</span><span>초보자 대상</span></div></section>
 <div class="stats"><div class="stat"><strong>26장</strong><span>PPT 연계</span></div><div class="stat"><strong>6단계</strong><span>핵심 실습</span></div><div class="stat"><strong>4시간</strong><span>기본 교육</span></div></div>
 <section class="lesson active" id="overview"><article class="panel"><span class="pill">START HERE · PPT 1–5</span><h2>전체 교육 안내</h2><p>이 페이지는 수강생이 강사의 PPT와 함께 보면서 따라 할 수 있도록 구성한 웹 가이드북입니다. 아래 교육 순서를 확인하고 왼쪽 메뉴에서 각 실습을 선택하세요.</p><div class="steps"><div class="step"><b>1교시</b><small>전체 아키텍처 · 핵심 도구</small></div><div class="step"><b>2교시</b><small>상품 데이터 분류 · 검수</small></div><div class="step"><b>3교시</b><small>Codex · GitHub · GCP</small></div><div class="step"><b>4교시</b><small>Cafe24 등록 미리보기</small></div></div><h3>오늘 실습할 전체 과정</h3><div class="flow"><span>샘플 상품</span><em>→</em><span>자동 분류</span><em>→</em><span>사람 검수</span><em>→</em><span>등록 미리보기</span><em>→</em><span>승인</span><em>→</em><span>등록(심화)</span></div><div class="detail good">학습 목표: 상품 5개를 분류하고, 검수가 필요한 항목을 구분하고, 실제 등록 없이 요청 데이터를 미리 확인할 수 있습니다.</div></article><article class="panel"><h2>전체 시스템 아키텍처</h2><p>개발 도구의 연결과 상품 데이터 처리 순서를 구분해서 설명합니다.</p><div class="diagram"><div class="node"><strong>① Codex</strong><span>자연어 요구를 코드로 구현</span></div><div class="node"><strong>② GitHub</strong><span>소스와 변경 이력 관리</span></div><div class="node"><strong>③ GCP Cloud Run</strong><span>서버 프로그램 실행</span></div><div class="node"><strong>④ Cafe24</strong><span>쇼핑몰 관리 API 연동</span></div></div><div class="detail">주의: GitHub에 push만 하면 자동 배포되는 것은 아닙니다. CI/CD 또는 별도 배포 설정이 필요합니다. Cafe24 연동에는 별도 인증과 권한이 필요합니다.</div></article></section>
@@ -63,15 +84,40 @@ git push origin main</pre><div class="detail warning">이 명령어는 수강생
 }</pre><div class="detail warning">위 JSON은 교육용 개념 예시이며 실제 Cafe24 API 요청 스키마가 아닙니다. 최신 공식 Admin API 문서의 엔드포인트·필수 필드·권한·호출 제한을 별도로 검증해야 합니다.</div><div class="actions"><a class="secondary" target="_blank" rel="noopener" href="https://github.com/bsmkorea1216sj/AIEdu/blob/main/cafe24-ai-shopping/05-cafe24/README.md">실습 MD 보기 ↗</a></div></article></section>
 <section class="lesson" id="operations"><article class="panel"><span class="pill">STEP 06 · PPT 24–26</span><h2>운영 점검과 다음 단계</h2><p>대시보드에는 <b>등록 대기 / 검수 / 승인 / 등록 완료·실패</b> 상태를 구분해 보여줍니다.</p><h3>최종 확인</h3><div class="checklist"><label><input type="checkbox">상품 5개를 분류하고 검수 대상을 표시했다</label><label><input type="checkbox">등록 미리보기 JSON을 확인했다</label><label><input type="checkbox">실제 운영몰에 상품을 등록하지 않았다</label><label><input type="checkbox">보안·비용·오류 로그 체크리스트를 이해했다</label></div><h3>후속 심화 과정</h3><ul><li>Cafe24 공식 API 인증·권한 연동</li><li>상품 이미지, 옵션과 재고 연동</li><li>관리자 승인 UI, 중복 등록 방지와 감사 로그</li><li>GCP 운영 대시보드 및 자동 모니터링</li></ul><div class="actions"><a class="secondary" target="_blank" rel="noopener" href="https://github.com/bsmkorea1216sj/AIEdu/blob/main/cafe24-ai-shopping/06-operations/README.md">운영 MD 보기 ↗</a></div></article></section>
 <section class="lesson" id="resources"><article class="panel"><span class="pill">REFERENCE</span><h2>전체 아키텍처 · 교재 원본</h2><p>더 자세한 도식과 강의 자료는 아래 저장소에서 확인할 수 있습니다.</p><div class="actions"><a class="primary" target="_blank" rel="noopener" href="https://github.com/bsmkorea1216sj/AIEdu/blob/main/cafe24-ai-shopping/diagrams/architecture.md">아키텍처 구조도 열기 ↗</a><a class="secondary" target="_blank" rel="noopener" href="https://github.com/bsmkorea1216sj/AIEdu/tree/main/cafe24-ai-shopping">전체 MD 실습 교재 ↗</a><a class="secondary" target="_blank" rel="noopener" href="https://github.com/bsmkorea1216sj/cloud_architecture">이 웹사이트 소스 ↗</a></div><h3>약어 사전</h3><table><tr><th>약어</th><th>원어</th><th>의미</th></tr><tr><td>API</td><td>Application Programming Interface</td><td>프로그램 간 통신 규약</td></tr><tr><td>GCP</td><td>Google Cloud Platform</td><td>구글 클라우드</td></tr><tr><td>CSV</td><td>Comma-Separated Values</td><td>쉼표로 구분된 데이터</td></tr><tr><td>JSON</td><td>JavaScript Object Notation</td><td>구조화된 데이터 형식</td></tr><tr><td>DB</td><td>Database</td><td>데이터베이스</td></tr><tr><td>CI/CD</td><td>Continuous Integration / Continuous Delivery</td><td>테스트·배포 자동화</td></tr><tr><td>OAuth</td><td>Open Authorization</td><td>접근 권한 위임</td></tr></table><div class="detail">PPT 원본은 강사용 Google Drive에 보관하며, 실제 공개 링크가 검증된 뒤 이 페이지에도 연결할 수 있습니다.</div></article></section>
-<div class="actions" style="justify-content:space-between"><button class="secondary" id="prev" onclick="move(-1)">← 이전 단계</button><button class="primary" id="next" onclick="move(1)">다음 단계 →</button></div>
+
 <div class="footer">© BSM AI EDU · 빅데이터김교수 · 교육용 실습 가이드 (모의 데이터 기반)</div>
 </main></div>
 <script>
-const lessons=[["overview","과정 소개·전체 구조"],["setup","01 · 환경 준비"],["classify","02 · 상품 자동 분류"],["codex","03 · Codex & GitHub"],["gcp","04 · GCP 배포"],["cafe24","05 · Cafe24 등록"],["operations","06 · 운영·확장"],["resources","참고 자료·약어"]];
-const nav=document.getElementById("nav");nav.innerHTML=lessons.map((v,i)=>'<button class="navbtn" data-id="'+v[0]+'" onclick="show(\''+v[0]+'\')"><span class="num">'+(i===0?"⌂":i===7?"↗":String(i).padStart(2,"0"))+'</span><span>'+v[1]+'</span></button>').join("");
-function show(id){if(!lessons.some(x=>x[0]===id))id="overview";document.querySelectorAll(".lesson").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll(".navbtn").forEach(x=>x.classList.toggle("active",x.dataset.id===id));history.replaceState(null,"","#"+id);let i=lessons.findIndex(x=>x[0]===id);document.getElementById("prev").disabled=i===0;document.getElementById("next").disabled=i===lessons.length-1;document.getElementById("prev").style.opacity=i===0?".4":"1";document.getElementById("next").style.opacity=i===lessons.length-1?".4":"1";document.querySelector("aside").classList.remove("show");window.scrollTo({top:0,behavior:"instant"})}
-function move(delta){let i=lessons.findIndex(x=>x[0]===location.hash.slice(1));show(lessons[Math.max(0,Math.min(lessons.length-1,(i<0?0:i)+delta))][0])}
-function copyCode(id,btn){let txt=document.getElementById(id).innerText;if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(txt).then(()=>{btn.textContent="복사 완료";setTimeout(()=>btn.textContent="복사",1600)}).catch(()=>fallbackCopy(txt))}else fallbackCopy(txt)}
-function fallbackCopy(txt){const t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove()}
-window.addEventListener("hashchange",()=>show(location.hash.slice(1)));show(location.hash.slice(1)||"overview");
+const lessons=[
+  {id:"overview",label:"교육 소개 · 전체 구조",file:"README.md",topics:["교육 목표","전체 아키텍처","4시간 교육 구성"]},
+  {id:"setup",label:"01. 개발환경 준비",file:"01-setup/README.md",topics:["Codex · GitHub · GCP","수업 전 체크리스트"]},
+  {id:"classify",label:"02. AI 상품 자동 분류",file:"02-classification/README.md",topics:["샘플 상품 5개","분류 프롬프트","검수 기준"]},
+  {id:"codex",label:"03. Codex · GitHub",file:"03-codex-github/README.md",topics:["코드 생성·테스트","Git 명령어","보안 점검"]},
+  {id:"gcp",label:"04. GCP Cloud Run 배포",file:"04-gcp/README.md",topics:["배포 워크플로우","FastAPI 엔드포인트","비용·권한"]},
+  {id:"cafe24",label:"05. Cafe24 상품 등록",file:"05-cafe24/README.md",topics:["DRY_RUN 미리보기","승인·권한","상품 등록 흐름"]},
+  {id:"operations",label:"06. 운영·검수·확장",file:"06-operations/README.md",topics:["최종 체크리스트","후속 심화"]},
+  {id:"resources",label:"자료실 · 구조도 · 약어",file:"diagrams/architecture.md",topics:["아키텍처 도식","영문 약어 사전"]}
+];
+const nav=document.getElementById("nav");
+nav.innerHTML=lessons.map((l,i)=>'<div><button type="button" class="navbtn" data-id="'+l.id+'" onclick="show(\''+l.id+'\')"><span class="num">'+(i===0?'⌂':i===7?'↗':String(i).padStart(2,'0'))+'</span><span class="toc-label"><b>'+l.label+'</b><small>'+l.file+'</small></span></button><ul class="topic-list">'+l.topics.map(t=>'<li>'+t+'</li>').join('')+'</ul></div>').join('');
+function show(id){
+  if(!lessons.some(x=>x.id===id))id="overview";
+  document.querySelectorAll(".lesson").forEach(el=>el.classList.toggle("active",el.id===id));
+  document.querySelectorAll(".navbtn").forEach(el=>{const on=el.dataset.id===id;el.classList.toggle("active",on);el.setAttribute("aria-current",on?"page":"false")});
+  document.querySelector(".hero").style.display=id==="overview"?"block":"none";
+  document.querySelector(".stats").style.display=id==="overview"?"grid":"none";
+  document.getElementById("current-chapter").textContent=lessons.find(x=>x.id===id).label;
+  history.replaceState(null,"","#"+id);
+  document.querySelector("aside").classList.remove("show");
+  document.querySelector("main").scrollTo({top:0,behavior:"instant"});
+}
+function copyCode(id,btn){
+  const txt=document.getElementById(id).innerText;
+  function done(){btn.textContent="복사 완료";setTimeout(()=>btn.textContent="복사",1600)}
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done));
+  else fallbackCopy(txt,done);
+}
+function fallbackCopy(txt,done){const t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();done()}
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+show(location.hash.slice(1)||"overview");
 </script></body></html>
